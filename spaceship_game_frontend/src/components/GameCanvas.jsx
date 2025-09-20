@@ -1404,75 +1404,288 @@ function GameCanvas({
       }
     }
     
-    // Main ship body with gradient
-    const bodyGrd = ctx.createLinearGradient(0, 0, s.w, 0);
-    bodyGrd.addColorStop(0, '#92400E');
-    bodyGrd.addColorStop(0.6, '#B45309');
-    bodyGrd.addColorStop(1, '#92400E');
-    ctx.fillStyle = bodyGrd;
+    // === MULTI-LAYERED HULL CONSTRUCTION ===
+    
+    // Layer 1: Base hull shadow/depth
+    ctx.fillStyle = '#451A03'; // Deep shadow brown
+    ctx.fillRect(1, 1, s.w, s.h);
+    
+    // Layer 2: Main hull with enhanced gradient and metallic sheen
+    const hullGrd = ctx.createLinearGradient(0, 0, s.w, s.h);
+    hullGrd.addColorStop(0, '#7C2D12');    // Shadow edge
+    hullGrd.addColorStop(0.15, '#92400E');  // Primary Heritage brown
+    hullGrd.addColorStop(0.35, '#B45309');  // Highlight
+    hullGrd.addColorStop(0.65, '#D97706');  // Metallic shine
+    hullGrd.addColorStop(0.8, '#B45309');   // Back to secondary
+    hullGrd.addColorStop(1, '#7C2D12');     // Shadow edge
+    ctx.fillStyle = hullGrd;
     ctx.fillRect(0, 0, s.w, s.h);
     
-    // Ship outline for definition
-    ctx.strokeStyle = '#7C2D12';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(0, 0, s.w, s.h);
+    // Layer 3: Hull panel lines and segments
+    ctx.strokeStyle = '#451A03';
+    ctx.lineWidth = 0.5;
+    // Vertical panel lines
+    ctx.beginPath();
+    ctx.moveTo(s.w * 0.25, 2);
+    ctx.lineTo(s.w * 0.25, s.h - 2);
+    ctx.moveTo(s.w * 0.6, 2);
+    ctx.lineTo(s.w * 0.6, s.h - 2);
+    ctx.moveTo(s.w * 0.8, 2);
+    ctx.lineTo(s.w * 0.8, s.h - 2);
+    // Horizontal panel line
+    ctx.moveTo(2, s.h * 0.5);
+    ctx.lineTo(s.w - 2, s.h * 0.5);
+    ctx.stroke();
     
-    // Enhanced nose cone with multi-part design
-    ctx.fillStyle = '#B45309';
+    // Layer 4: Metallic reflection highlights
+    const metalGrd = ctx.createLinearGradient(0, 0, 0, s.h);
+    metalGrd.addColorStop(0, 'rgba(254, 243, 199, 0.8)'); // Bright cream reflection
+    metalGrd.addColorStop(0.3, 'rgba(254, 243, 199, 0.4)');
+    metalGrd.addColorStop(0.7, 'rgba(254, 243, 199, 0.1)');
+    metalGrd.addColorStop(1, 'rgba(254, 243, 199, 0)');
+    ctx.fillStyle = metalGrd;
+    ctx.fillRect(2, 1, s.w - 4, s.h * 0.4);
+    
+    // Layer 5: Upper hull metallic strip with rivets
+    ctx.fillStyle = '#A16207'; // Metallic bronze
+    ctx.fillRect(3, 2, s.w - 6, 3);
+    ctx.fillStyle = '#FEF3C7'; // Bright metallic highlight
+    ctx.fillRect(3, 2, s.w - 6, 1);
+    
+    // Rivets along the metallic strip
+    ctx.fillStyle = '#451A03';
+    for (let i = 8; i < s.w - 3; i += 6) {
+      ctx.fillRect(i, 3, 1, 1);
+    }
+    
+    // Layer 6: Lower hull reinforcement band
+    ctx.fillStyle = '#A16207';
+    ctx.fillRect(3, s.h - 5, s.w - 6, 3);
+    ctx.fillStyle = '#7C2D12'; // Shadow line
+    ctx.fillRect(3, s.h - 2, s.w - 6, 1);
+    
+    // === ENHANCED NOSE CONE WITH SHARP LINES ===
+    
+    // Nose cone base shadow
+    ctx.fillStyle = '#451A03';
+    ctx.beginPath();
+    ctx.moveTo(s.w + 1, s.h / 2 + 1);
+    ctx.lineTo(s.w + 11, s.h / 2 - 4);
+    ctx.lineTo(s.w + 14, s.h / 2 - 2);
+    ctx.lineTo(s.w + 14, s.h / 2 + 4);
+    ctx.lineTo(s.w + 11, s.h / 2 + 6);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Primary nose cone with gradient
+    const noseGrd = ctx.createLinearGradient(s.w, s.h / 2 - 5, s.w + 13, s.h / 2 + 5);
+    noseGrd.addColorStop(0, '#B45309');
+    noseGrd.addColorStop(0.4, '#D97706');
+    noseGrd.addColorStop(0.8, '#F59E0B');
+    noseGrd.addColorStop(1, '#92400E');
+    ctx.fillStyle = noseGrd;
     ctx.beginPath();
     ctx.moveTo(s.w, s.h / 2);
     ctx.lineTo(s.w + 10, s.h / 2 - 5);
-    ctx.lineTo(s.w + 12, s.h / 2 - 3);
-    ctx.lineTo(s.w + 12, s.h / 2 + 3);
+    ctx.lineTo(s.w + 13, s.h / 2 - 3);
+    ctx.lineTo(s.w + 13, s.h / 2 + 3);
     ctx.lineTo(s.w + 10, s.h / 2 + 5);
     ctx.closePath();
     ctx.fill();
     
-    // Nose tip highlight
-    ctx.fillStyle = '#D97706';
+    // Nose tip with sharp metallic point
+    ctx.fillStyle = '#FEF3C7'; // Bright metallic tip
     ctx.beginPath();
-    ctx.moveTo(s.w + 10, s.h / 2 - 3);
-    ctx.lineTo(s.w + 12, s.h / 2 - 2);
-    ctx.lineTo(s.w + 12, s.h / 2 + 2);
-    ctx.lineTo(s.w + 10, s.h / 2 + 3);
+    ctx.moveTo(s.w + 10, s.h / 2 - 2);
+    ctx.lineTo(s.w + 13, s.h / 2 - 1);
+    ctx.lineTo(s.w + 13, s.h / 2 + 1);
+    ctx.lineTo(s.w + 10, s.h / 2 + 2);
     ctx.closePath();
     ctx.fill();
     
-    // Enhanced canopy with reflection
-    const canopyGrd = ctx.createLinearGradient(s.w * 0.4, 3, s.w * 0.4 + 10, s.h - 6);
-    canopyGrd.addColorStop(0, '#FEF3C7');
-    canopyGrd.addColorStop(0.3, '#F3E9D2');
-    canopyGrd.addColorStop(1, '#E6D5B0');
-    ctx.fillStyle = canopyGrd;
-    ctx.fillRect(s.w * 0.4, 3, 10, s.h - 6);
+    // Nose cone edge highlights
+    ctx.strokeStyle = '#FEF3C7';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(s.w + 10, s.h / 2 - 5);
+    ctx.lineTo(s.w + 13, s.h / 2 - 3);
+    ctx.moveTo(s.w + 10, s.h / 2 + 5);
+    ctx.lineTo(s.w + 13, s.h / 2 + 3);
+    ctx.stroke();
     
-    // Canopy reflection highlight
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.fillRect(s.w * 0.4 + 1, 4, 3, s.h - 8);
+    // === ENHANCED CANOPY WITH DETAILED REFLECTIONS ===
     
-    // Wing details
+    // Canopy frame
     ctx.fillStyle = '#7C2D12';
-    ctx.fillRect(s.w * 0.6, 1, 8, 2); // top wing detail
-    ctx.fillRect(s.w * 0.6, s.h - 3, 8, 2); // bottom wing detail
+    ctx.fillRect(s.w * 0.35, 2, 14, s.h - 4);
     
-    // Flashing wing lights
+    // Main canopy with complex gradient
+    const canopyGrd = ctx.createLinearGradient(s.w * 0.36, 3, s.w * 0.36 + 12, s.h - 6);
+    canopyGrd.addColorStop(0, '#FEF3C7');    // Bright reflection
+    canopyGrd.addColorStop(0.2, '#F3E9D2');  // Light cream
+    canopyGrd.addColorStop(0.5, '#E6D5B0');  // Medium cream
+    canopyGrd.addColorStop(0.8, '#D4C5A2');  // Darker cream
+    canopyGrd.addColorStop(1, '#C8B68A');    // Base color
+    ctx.fillStyle = canopyGrd;
+    ctx.fillRect(s.w * 0.36, 3, 12, s.h - 6);
+    
+    // Canopy reflection streaks
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillRect(s.w * 0.37, 4, 2, s.h - 8);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.fillRect(s.w * 0.40, 4, 1, s.h - 8);
+    ctx.fillRect(s.w * 0.43, 5, 1, s.h - 10);
+    
+    // Canopy frame details
+    ctx.strokeStyle = '#451A03';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(s.w * 0.36, 3, 12, s.h - 6);
+    
+    // === DETAILED WING ASSEMBLIES ===
+    
+    // Upper wing assembly
+    ctx.fillStyle = '#7C2D12'; // Wing shadow
+    ctx.fillRect(s.w * 0.55, 0, 14, 4);
+    
+    ctx.fillStyle = '#92400E'; // Wing base
+    ctx.fillRect(s.w * 0.56, 0, 12, 3);
+    
+    // Wing details and weapon hardpoints
+    ctx.fillStyle = '#B45309';
+    ctx.fillRect(s.w * 0.58, 0, 2, 2);
+    ctx.fillRect(s.w * 0.62, 0, 2, 2);
+    ctx.fillRect(s.w * 0.66, 0, 2, 2);
+    
+    // Wing edge highlight
+    ctx.fillStyle = '#D97706';
+    ctx.fillRect(s.w * 0.56, 0, 12, 1);
+    
+    // Lower wing assembly (mirrored)
+    ctx.fillStyle = '#7C2D12';
+    ctx.fillRect(s.w * 0.55, s.h - 4, 14, 4);
+    
+    ctx.fillStyle = '#92400E';
+    ctx.fillRect(s.w * 0.56, s.h - 3, 12, 3);
+    
+    ctx.fillStyle = '#B45309';
+    ctx.fillRect(s.w * 0.58, s.h - 2, 2, 2);
+    ctx.fillRect(s.w * 0.62, s.h - 2, 2, 2);
+    ctx.fillRect(s.w * 0.66, s.h - 2, 2, 2);
+    
+    ctx.fillStyle = '#D97706';
+    ctx.fillRect(s.w * 0.56, s.h - 1, 12, 1);
+    
+    // === ADVANCED LIGHTING AND ANTENNA DETAILS ===
+    
+    // Navigation lights (enhanced flashing)
     const wingFlash = 0.5 + 0.5 * Math.sin(s.wingFlicker);
-    ctx.globalAlpha = wingFlash * 0.8;
-    ctx.fillStyle = '#F59E0B';
-    ctx.fillRect(s.w * 0.7, 0, 2, 1); // top wing light
-    ctx.fillRect(s.w * 0.7, s.h - 1, 2, 1); // bottom wing light
+    const altFlash = 0.5 + 0.5 * Math.sin(s.wingFlicker + Math.PI);
+    
+    // Primary wing lights
+    ctx.globalAlpha = wingFlash * 0.9;
+    ctx.fillStyle = '#DC2626'; // Red navigation light
+    ctx.fillRect(s.w * 0.68, 0, 3, 1);
+    ctx.fillStyle = '#059669'; // Green navigation light  
+    ctx.fillRect(s.w * 0.68, s.h - 1, 3, 1);
     ctx.globalAlpha = 1;
     
-    // Engine vents
-    ctx.fillStyle = '#451A03';
-    ctx.fillRect(-1, s.h * 0.3, 2, s.h * 0.15);
-    ctx.fillRect(-1, s.h * 0.55, 2, s.h * 0.15);
-    
-    // Heritage stripe pattern
+    // Secondary strobe lights
+    ctx.globalAlpha = altFlash * 0.7;
     ctx.fillStyle = '#F59E0B';
-    ctx.fillRect(4, s.h - 4, s.w - 8, 2);
+    ctx.fillRect(s.w * 0.72, 1, 1, 1);
+    ctx.fillRect(s.w * 0.72, s.h - 2, 1, 1);
+    ctx.globalAlpha = 1;
+    
+    // Communication antenna
+    ctx.strokeStyle = '#A16207';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(s.w * 0.3, s.h * 0.2);
+    ctx.lineTo(s.w * 0.28, s.h * 0.05);
+    ctx.lineTo(s.w * 0.32, s.h * 0.1);
+    ctx.stroke();
+    
+    // Antenna tip light
+    ctx.fillStyle = '#DC2626';
+    ctx.fillRect(s.w * 0.28, s.h * 0.05, 1, 1);
+    
+    // === ENGINE DETAILS AND VENTS ===
+    
+    // Enhanced engine vents with depth
+    ctx.fillStyle = '#1C0A00'; // Deep vent shadow
+    ctx.fillRect(-2, s.h * 0.25, 4, s.h * 0.2);
+    ctx.fillRect(-2, s.h * 0.55, 4, s.h * 0.2);
+    
+    ctx.fillStyle = '#451A03'; // Vent interior
+    ctx.fillRect(-1, s.h * 0.27, 2, s.h * 0.16);
+    ctx.fillRect(-1, s.h * 0.57, 2, s.h * 0.16);
+    
+    // Vent grilles
+    ctx.strokeStyle = '#7C2D12';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 3; i++) {
+      const y1 = s.h * 0.28 + i * 2;
+      const y2 = s.h * 0.58 + i * 2;
+      ctx.beginPath();
+      ctx.moveTo(-1, y1);
+      ctx.lineTo(1, y1);
+      ctx.moveTo(-1, y2);
+      ctx.lineTo(1, y2);
+      ctx.stroke();
+    }
+    
+    // === HULL IDENTIFICATION AND DETAILING ===
+    
+    // Hull identification numbers
     ctx.fillStyle = '#FEF3C7';
-    ctx.fillRect(6, s.h - 3, s.w - 12, 1);
+    ctx.font = '6px monospace';
+    ctx.fillText('HD-7', 4, s.h * 0.4);
+    
+    // Additional hull paneling
+    ctx.strokeStyle = 'rgba(69, 26, 3, 0.5)';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    // Diagonal support struts
+    ctx.moveTo(s.w * 0.15, 4);
+    ctx.lineTo(s.w * 0.25, s.h - 4);
+    ctx.moveTo(s.w * 0.75, 4);
+    ctx.lineTo(s.w * 0.85, s.h - 4);
+    ctx.stroke();
+    
+    // === HERITAGE STRIPE SYSTEM (ENHANCED) ===
+    
+    // Primary heritage stripe with gradient
+    const stripeGrd = ctx.createLinearGradient(4, s.h - 6, s.w - 8, s.h - 2);
+    stripeGrd.addColorStop(0, '#D97706');
+    stripeGrd.addColorStop(0.5, '#F59E0B');
+    stripeGrd.addColorStop(1, '#D97706');
+    ctx.fillStyle = stripeGrd;
+    ctx.fillRect(4, s.h - 6, s.w - 8, 4);
+    
+    // Stripe highlight
+    ctx.fillStyle = '#FEF3C7';
+    ctx.fillRect(5, s.h - 5, s.w - 10, 1);
+    
+    // Stripe shadow
+    ctx.fillStyle = '#92400E';
+    ctx.fillRect(5, s.h - 3, s.w - 10, 1);
+    
+    // Secondary accent stripes
+    ctx.fillStyle = '#A16207';
+    ctx.fillRect(6, 5, s.w - 12, 1);
+    ctx.fillRect(6, s.h - 8, s.w - 12, 1);
+    
+    // === WEAPON SYSTEM INDICATORS ===
+    
+    // Weapon hardpoint indicators
+    ctx.fillStyle = '#7C2D12';
+    ctx.fillRect(s.w * 0.85, s.h * 0.3, 3, 2);
+    ctx.fillRect(s.w * 0.85, s.h * 0.68, 3, 2);
+    
+    // Weapon status lights
+    ctx.fillStyle = isMoving ? '#059669' : '#92400E'; // Green when active
+    ctx.fillRect(s.w * 0.86, s.h * 0.31, 1, 0.5);
+    ctx.fillRect(s.w * 0.86, s.h * 0.69, 1, 0.5);
     
     ctx.restore();
   }
