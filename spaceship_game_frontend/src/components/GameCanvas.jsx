@@ -4,17 +4,11 @@ import React, { useEffect, useRef } from 'react';
  * PUBLIC_INTERFACE
  * GameCanvas
  * Renders the HTML canvas and runs game loop logic:
- * - Parallax background with multiple layers:
- *    • Animated twinkling stars (deepest)
- *    • Pulsing nebulae with Heritage Brown theme colors
- *    • Sky with clouds (slowest)
- *    • Distant mountains
- *    • Midground hills
- *    • Foreground ground (interacts with gameplay)
+ * - Parallax background with multiple layers
  * - Player ship with arrow key movement; auto-scrolls to the right
- * - Rockets spawn on uneven foreground ground and launch vertically
+ * - Enhanced rocket AI that actively targets the player
  * - Bullets (space) and Bombs ('b') to destroy rockets
- * - Level scaling increases spawn rate and rocket speed
+ * - Level scaling increases spawn rate and rocket intelligence
  * - Emits callbacks: onScore, onLoseLife, onLevelProgress, onShoot, onBomb
  */
 function GameCanvas({
@@ -54,18 +48,6 @@ function GameCanvas({
     hillsOffset: 0,
     mountains: [],
     mountainsOffset: 0,
-    // entities
-    ship: { 
-      x: 120, y: 360, w: 38, h: 22, vx: 0, vy: 0, speed: 280, damageFlash: 0,
-      thrusterTime: 0, // for animated thruster flames
-      engineHeat: 0, // engine heat effect
-      wingFlicker: 0 // wing light flicker
-    },
-=======
-  }
-
-  function drawMountains(ctx) {,
-=======
     clouds: [],
 
     // entities
@@ -75,18 +57,6 @@ function GameCanvas({
       engineHeat: 0, // engine heat effect
       wingFlicker: 0 // wing light flicker
     },
-=======
-    // entities
-    ship: { 
-      x: 120, y: 360, w: 38, h: 22, vx: 0, vy: 0, speed: 280, damageFlash: 0,
-      thrusterTime: 0, // for animated thruster flames
-      engineHeat: 0, // engine heat effect
-      wingFlicker: 0 // wing light flicker
-    },
-=======
-  }
-
-  function drawMountains(ctx) {,
     bullets: [],
     bombs: [],
     rockets: [],
@@ -243,10 +213,10 @@ function GameCanvas({
   function seedClouds() {
     const st = stateRef.current;
     const clouds = [];
-    const count = Math.max(8, Math.floor(st.width / 160)); // Slightly more clouds for depth
+    const count = Math.max(8, Math.floor(st.width / 160));
     for (let i = 0; i < count; i++) {
-      const scale = 0.4 + Math.random() * 1.4; // Wider scale range for variety
-      const y = st.height * (0.08 + Math.random() * 0.3); // Slightly higher positioning
+      const scale = 0.4 + Math.random() * 1.4;
+      const y = st.height * (0.08 + Math.random() * 0.3);
       const x = Math.random() * (st.width + 1000) - 500;
       clouds.push(makeCloud(x, y, scale, i));
     }
@@ -254,114 +224,41 @@ function GameCanvas({
   }
 
   function makeCloud(x, y, scale, index) {
-    // Create different cloud types for visual variety
-    const cloudType = Math.floor(Math.random() * 4); // 4 different cloud shapes
-    const depthLayer = Math.random(); // 0 = front, 1 = back for layered movement
+    const cloudType = Math.floor(Math.random() * 4);
+    const depthLayer = Math.random();
     
     return {
       x, y, scale, cloudType, depthLayer, index,
-      
-      // Enhanced parallax movement with variable speeds for depth
-      // Farther clouds move slower, creating sophisticated parallax effect
-      vx: -(3 + Math.random() * 10) * (0.6 + depthLayer * 0.7), // Variable speed based on depth
-      
-      // Sophisticated opacity variation with subtle depth-based transparency
+      vx: -(3 + Math.random() * 10) * (0.6 + depthLayer * 0.7),
       opacity: (0.4 + Math.random() * 0.4) * (0.7 + depthLayer * 0.3),
-      baseOpacity: 0.4 + Math.random() * 0.4, // Store base for morphing effects
-      
-      // Morphing and animation properties
-      morphPhase: Math.random() * Math.PI * 2, // For shape morphing
-      morphSpeed: 0.2 + Math.random() * 0.4, // Individual morphing speeds
-      morphIntensity: 0.1 + Math.random() * 0.15, // How much the cloud morphs
-      
-      // Drift animation for organic movement
+      baseOpacity: 0.4 + Math.random() * 0.4,
+      morphPhase: Math.random() * Math.PI * 2,
+      morphSpeed: 0.2 + Math.random() * 0.4,
+      morphIntensity: 0.1 + Math.random() * 0.15,
       driftPhase: Math.random() * Math.PI * 2,
       driftSpeed: 0.3 + Math.random() * 0.5,
-      driftAmplitude: 3 + Math.random() * 8, // Vertical drift amount
-      
-      // Layered opacity for sophisticated semi-transparency
-      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
-      layerOffsets: [], // Will be populated with layer offset data
-    };\n  }\n=======
-=======
-
-  function seedStars() {
-=======
-      // Soft edge properties for volume effect
-      softness: 0.6 + Math.random() * 0.4, // Edge softness factor
-      volumeIntensity: 0.5 + Math.random() * 0.5, // 3D volume effect strength
-      
-      // Layered opacity for sophisticated semi-transparency
-      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
-      layerOffsets: [], // Will be populated with layer offset data
+      driftAmplitude: 3 + Math.random() * 8,
+      colorVariant: Math.floor(Math.random() * 5),
+      softness: 0.6 + Math.random() * 0.4,
+      volumeIntensity: 0.5 + Math.random() * 0.5,
+      layerCount: 2 + Math.floor(Math.random() * 3),
+      layerOffsets: [],
     };
   }
-=======
-
-  function seedStars() {
-=======
-      // Layered opacity for sophisticated semi-transparency
-      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
-      layerOffsets: [], // Will be populated with layer offset data
-    };
-  }
-=======
-=======
-      // Color variation within Heritage Brown theme
-      colorVariant: Math.floor(Math.random() * 5), // 5 Heritage Brown cloud colors
-      
-      // Soft edge properties for volume effect
-      softness: 0.6 + Math.random() * 0.4, // Edge softness factor
-      volumeIntensity: 0.5 + Math.random() * 0.5, // 3D volume effect strength
-      
-      // Layered opacity for sophisticated semi-transparency
-      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
-      layerOffsets: [], // Will be populated with layer offset data
-    };
-  }
-=======
-      // Layered opacity for sophisticated semi-transparency
-      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
-      layerOffsets: [], // Will be populated with layer offset data
-    };\n  }\n=======
-=======
-
-  function seedStars() {
-=======
-      // Soft edge properties for volume effect
-      softness: 0.6 + Math.random() * 0.4, // Edge softness factor
-      volumeIntensity: 0.5 + Math.random() * 0.5, // 3D volume effect strength
-      
-      // Layered opacity for sophisticated semi-transparency
-      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
-      layerOffsets: [], // Will be populated with layer offset data
-    };
-  }
-=======
-
-  function seedStars() {
-=======
-      // Layered opacity for sophisticated semi-transparency
-      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
-      layerOffsets: [], // Will be populated with layer offset data
-    };
-  }
-=======
-=======
 
   function seedStars() {
     const st = stateRef.current;
     const stars = [];
-    const count = Math.max(80, Math.floor(st.width / 15)); // more stars for larger screens
+    const count = Math.max(80, Math.floor(st.width / 15));
     for (let i = 0; i < count; i++) {
       const scale = 0.3 + Math.random() * 1.2;
       const x = Math.random() * (st.width + 1000) - 500;
-      const y = Math.random() * st.height * 0.6; // upper portion of sky
+      const y = Math.random() * st.height * 0.6;
       const twinkleSpeed = 0.5 + Math.random() * 2;
       const brightness = 0.4 + Math.random() * 0.6;
       stars.push({
         x, y, scale, brightness, twinkleSpeed,
-        vx: -(2 + Math.random() * 4), // very slow drift
+        vx: -(2 + Math.random() * 4),
         twinklePhase: Math.random() * Math.PI * 2,
       });
     }
@@ -372,16 +269,16 @@ function GameCanvas({
   function seedNebulae() {
     const st = stateRef.current;
     const nebulae = [];
-    const count = Math.max(3, Math.floor(st.width / 400)); // fewer, larger nebulae
+    const count = Math.max(3, Math.floor(st.width / 400));
     for (let i = 0; i < count; i++) {
       const scale = 0.8 + Math.random() * 1.5;
       const x = Math.random() * (st.width + 1200) - 600;
       const y = st.height * (0.1 + Math.random() * 0.4);
       const opacity = 0.15 + Math.random() * 0.25;
-      const colorType = Math.floor(Math.random() * 3); // 3 color variations
+      const colorType = Math.floor(Math.random() * 3);
       nebulae.push({
         x, y, scale, opacity, colorType,
-        vx: -(1 + Math.random() * 3), // very slow drift
+        vx: -(1 + Math.random() * 3),
         pulsePhase: Math.random() * Math.PI * 2,
         pulseSpeed: 0.3 + Math.random() * 0.7,
       });
@@ -393,17 +290,16 @@ function GameCanvas({
   function initializeWeatherSystems() {
     const st = stateRef.current;
     
-    // Initialize fog layers with different depths and movement speeds
     st.weather.fogLayers = [];
-    const fogLayerCount = 3 + Math.floor(Math.random() * 3); // 3-5 fog layers
+    const fogLayerCount = 3 + Math.floor(Math.random() * 3);
     for (let i = 0; i < fogLayerCount; i++) {
-      const depth = i / fogLayerCount; // 0 (front) to 1 (back)
+      const depth = i / fogLayerCount;
       const layer = {
         x: Math.random() * st.width * 2 - st.width,
-        y: st.height * (0.3 + Math.random() * 0.4), // mid-screen fog
-        width: st.width * (1.5 + Math.random() * 2), // varied widths
+        y: st.height * (0.3 + Math.random() * 0.4),
+        width: st.width * (1.5 + Math.random() * 2),
         height: 60 + Math.random() * 120,
-        vx: -(10 + Math.random() * 20) * (1 - depth * 0.7), // faster in front
+        vx: -(10 + Math.random() * 20) * (1 - depth * 0.7),
         opacity: (0.1 + Math.random() * 0.2) * st.weather.fogDensity,
         depth: depth,
         wavePhase: Math.random() * Math.PI * 2,
@@ -413,7 +309,6 @@ function GameCanvas({
       st.weather.fogLayers.push(layer);
     }
     
-    // Reset weather timers
     st.weather.lightningTimer = 0;
     st.weather.lightningInterval = 8000 + Math.random() * 12000;
   }
@@ -452,11 +347,10 @@ function GameCanvas({
 
   function spawnRockets(dt) {
     const st = stateRef.current;
-    const spawnRate = 0.5 + level * 0.03; // rockets/sec
+    const spawnRate = 0.5 + level * 0.03;
     st.rocketAcc = (st.rocketAcc || 0) + dt * spawnRate;
     while (st.rocketAcc > 1) {
       st.rocketAcc -= 1;
-      // pick a ground point slightly ahead
       const aheadX = st.ship.x + st.width * 0.6 + Math.random() * (st.width * 0.4);
       const idx = Math.min(st.terrain.length - 1, Math.max(0, Math.floor(aheadX / 6)));
       const groundY = st.terrain[idx]?.y || st.height * 0.85;
@@ -464,15 +358,23 @@ function GameCanvas({
       st.rockets.push({
         x: baseX,
         y: groundY - 8,
-        vx: - (120 + level * 4), // horizontal drift relative to world
-        vy: - (180 + Math.random() * (60 + level * 3)), // launch speed
+        vx: - (120 + level * 4),
+        vy: - (180 + Math.random() * (60 + level * 3)),
         w: 8,
         h: 18,
-        active: false, // becomes active once above ground a bit
-        exhaustTime: 0, // for animated exhaust flames
-        exhaustIntensity: 0.5 + Math.random() * 0.5, // individual exhaust intensity
-        wobble: Math.random() * Math.PI * 2, // rocket wobble phase
-        launched: false // tracks if rocket has started moving
+        active: false,
+        exhaustTime: 0,
+        exhaustIntensity: 0.5 + Math.random() * 0.5,
+        wobble: Math.random() * Math.PI * 2,
+        launched: false,
+        // AI targeting properties
+        targetingEnabled: false,
+        steeringForce: 180 + level * 15,
+        predictionTime: 0.8 + level * 0.1,
+        maxTurnRate: 2.5 + level * 0.3,
+        interceptMode: false,
+        lastTargetX: st.ship.x,
+        lastTargetY: st.ship.y,
       });
     }
   }
@@ -487,7 +389,6 @@ function GameCanvas({
   function explode(x, y, count = 12, intensity = 'normal') {
     const st = stateRef.current;
     
-    // Screen shake based on intensity and proximity to ship
     const distToShip = Math.sqrt((x - st.ship.x) ** 2 + (y - st.ship.y) ** 2);
     const maxShakeDistance = 300;
     const shakeStrength = intensity === 'heavy' ? 12 : intensity === 'medium' ? 8 : 5;
@@ -497,17 +398,15 @@ function GameCanvas({
       triggerScreenShake(shakeStrength * proximityFactor, 300 + (intensity === 'heavy' ? 200 : 0));
     }
 
-    // Create flash effect for larger explosions
     if (intensity === 'heavy' || intensity === 'medium') {
       st.flashes.push({
         alpha: intensity === 'heavy' ? 0.4 : 0.25,
         life: intensity === 'heavy' ? 150 : 100,
         age: 0,
-        color: intensity === 'heavy' ? '#F59E0B' : '#DC2626' // Orange flash for bombs, red for rockets
+        color: intensity === 'heavy' ? '#F59E0B' : '#DC2626'
       });
     }
 
-    // Create shockwave for heavy explosions
     if (intensity === 'heavy') {
       st.shockwaves.push({
         x, y,
@@ -520,21 +419,18 @@ function GameCanvas({
       });
     }
 
-    // Enhanced particle system with multiple types
     for (let i = 0; i < count; i++) {
       const ang = (Math.PI * 2 * i) / count + Math.random() * 0.8;
       const baseSpeed = intensity === 'heavy' ? 150 : intensity === 'medium' ? 120 : 80;
       const sp = baseSpeed + Math.random() * (baseSpeed * 0.8);
       
-      // Create different particle types
       const particleType = Math.random();
       
       if (particleType < 0.4) {
-        // Fire/flame particles (Heritage Orange/Brown)
         st.particles.push({
           x, y,
           vx: Math.cos(ang) * sp * 0.7,
-          vy: Math.sin(ang) * sp * 0.7 - 30, // slight upward bias for flames
+          vy: Math.sin(ang) * sp * 0.7 - 30,
           life: 800 + Math.random() * 600,
           age: 0,
           size: 2 + Math.random() * 4,
@@ -542,7 +438,6 @@ function GameCanvas({
           color: ['#F59E0B', '#92400E', '#B45309'][Math.floor(Math.random() * 3)]
         });
       } else if (particleType < 0.7) {
-        // Sparks (bright yellow/orange)
         st.particles.push({
           x, y,
           vx: Math.cos(ang) * sp,
@@ -554,7 +449,6 @@ function GameCanvas({
           color: ['#FEF3C7', '#F59E0B', '#D97706'][Math.floor(Math.random() * 3)]
         });
       } else {
-        // Debris/smoke (darker Heritage colors)
         st.particles.push({
           x, y,
           vx: Math.cos(ang) * sp * 0.5,
@@ -571,9 +465,8 @@ function GameCanvas({
 
   function triggerScreenShake(intensity, duration) {
     const st = stateRef.current;
-    // Only update if new shake is stronger or current shake is nearly done
     if (intensity > st.camera.shakeIntensity || st.camera.shakeDuration < 50) {
-      st.camera.shakeIntensity = Math.min(intensity, 15); // Cap shake intensity
+      st.camera.shakeIntensity = Math.min(intensity, 15);
       st.camera.shakeDuration = duration;
     }
   }
@@ -585,8 +478,7 @@ function GameCanvas({
     if (cam.shakeDuration > 0) {
       cam.shakeDuration -= dt * 1000;
       
-      // Generate shake offset with decreasing intensity
-      const factor = Math.max(0, cam.shakeDuration / 300); // normalize over 300ms base
+      const factor = Math.max(0, cam.shakeDuration / 300);
       const currentIntensity = cam.shakeIntensity * factor;
       
       cam.shakeX = (Math.random() - 0.5) * currentIntensity * 2;
@@ -608,30 +500,23 @@ function GameCanvas({
     const dt = st.lastTime ? Math.min(0.033, (now - st.lastTime) / 1000) : 0;
     st.lastTime = now;
 
-    // Update screen shake
     updateScreenShake(dt);
 
-    // Clear
     ctx.clearRect(0, 0, st.width, st.height);
 
-    // Apply camera transform (screen shake)
     ctx.save();
     ctx.translate(st.camera.shakeX, st.camera.shakeY);
 
-    // Base world scroll speed - constant smooth movement independent of player
-    // Slightly increases with level for gameplay progression
-    const baseScrollSpeed = 100; // Base constant speed
-    const levelScrollBonus = level * 3; // Gradual increase with level
+    const baseScrollSpeed = 100;
+    const levelScrollBonus = level * 3;
     const totalScrollSpeed = baseScrollSpeed + levelScrollBonus;
 
-    // Update parallax offsets with different speeds for depth illusion
-    // All layers move continuously to the left at their respective speeds
-    const starScrollSpeed = totalScrollSpeed * 0.08;      // slowest - deep space
-    const nebulaeScrollSpeed = totalScrollSpeed * 0.12;   // very slow - deep space  
-    const cloudScrollSpeed = totalScrollSpeed * 0.18;     // slow - sky layer
-    const mountainScrollSpeed = totalScrollSpeed * 0.35;  // medium-slow - distant terrain
-    const hillScrollSpeed = totalScrollSpeed * 0.65;      // medium - mid terrain
-    const terrainScrollSpeed = totalScrollSpeed * 1.0;    // fastest - foreground terrain
+    const starScrollSpeed = totalScrollSpeed * 0.08;
+    const nebulaeScrollSpeed = totalScrollSpeed * 0.12;
+    const cloudScrollSpeed = totalScrollSpeed * 0.18;
+    const mountainScrollSpeed = totalScrollSpeed * 0.35;
+    const hillScrollSpeed = totalScrollSpeed * 0.65;
+    const terrainScrollSpeed = totalScrollSpeed * 1.0;
 
     st.starsOffset += starScrollSpeed * dt;
     st.nebulaeOffset += nebulaeScrollSpeed * dt;
@@ -639,55 +524,42 @@ function GameCanvas({
     st.hillsOffset += hillScrollSpeed * dt;
     st.terrainOffset += terrainScrollSpeed * dt;
 
-    // Efficient offset wrapping to prevent overflow and ensure seamless looping
     const wrap = (offset, period) => {
       while (offset >= period) offset -= period;
       return offset;
     };
-    st.starsOffset = wrap(st.starsOffset, 1000);        // Large period for stars
-    st.nebulaeOffset = wrap(st.nebulaeOffset, 1200);    // Large period for nebulae
-    st.mountainsOffset = wrap(st.mountainsOffset, 500); // Mountain terrain period
-    st.hillsOffset = wrap(st.hillsOffset, 400);         // Hill terrain period  
-    st.terrainOffset = wrap(st.terrainOffset, 300);     // Ground terrain period
+    st.starsOffset = wrap(st.starsOffset, 1000);
+    st.nebulaeOffset = wrap(st.nebulaeOffset, 1200);
+    st.mountainsOffset = wrap(st.mountainsOffset, 500);
+    st.hillsOffset = wrap(st.hillsOffset, 400);
+    st.terrainOffset = wrap(st.terrainOffset, 300);
 
-    // Individual element movement - stars drift independently with twinkling
     st.stars.forEach(s => {
-      // Stars move at their individual speeds plus the base parallax movement
       s.x += s.vx * dt;
       s.twinklePhase += s.twinkleSpeed * dt;
-      // Seamless wrapping with buffer for smooth transitions
       if (s.x < -100) s.x = st.width + 100 + Math.random() * 200;
     });
 
-    // Nebulae pulse and drift with their own movement patterns
     st.nebulae.forEach(n => {
-      // Nebulae have their individual drift plus parallax scrolling
       n.x += n.vx * dt;
       n.pulsePhase += n.pulseSpeed * dt;
-      // Wrap with scale-aware buffer for larger nebulae
       const wrapBuffer = 400 * n.scale;
       if (n.x < -wrapBuffer) n.x = st.width + wrapBuffer + Math.random() * 200;
     });
 
-    // Ultra-sophisticated cloud movement with morphing and layered parallax
     st.clouds.forEach(c => {
-      // Enhanced parallax movement with variable speeds based on depth layer
-      const parallaxMultiplier = 0.5 + (1 - c.depthLayer) * 0.8; // Front clouds move faster
+      const parallaxMultiplier = 0.5 + (1 - c.depthLayer) * 0.8;
       c.x += c.vx * dt * parallaxMultiplier;
       
-      // Update morphing animation phases
       c.morphPhase += c.morphSpeed * dt;
       c.driftPhase += c.driftSpeed * dt;
       
-      // Organic vertical drift animation
       const driftOffset = Math.sin(c.driftPhase) * c.driftAmplitude * 0.5;
       c.currentY = c.y + driftOffset;
       
-      // Subtle opacity breathing effect for more life-like appearance
       const opacityBreathing = 1 + Math.sin(c.morphPhase * 0.7) * 0.15;
       c.currentOpacity = c.baseOpacity * opacityBreathing * (0.8 + c.depthLayer * 0.2);
       
-      // Generate layer offsets for multi-layered cloud effect
       if (!c.layerOffsets.length) {
         for (let i = 0; i < c.layerCount; i++) {
           c.layerOffsets.push({
@@ -699,105 +571,152 @@ function GameCanvas({
         }
       }
       
-      // Advanced wrapping with depth-aware buffers
       const wrapBuffer = (250 + c.depthLayer * 100) * c.scale;
       if (c.x < -wrapBuffer) {
         c.x = st.width + wrapBuffer + Math.random() * 400;
-        // Regenerate properties for variety when cloud wraps
         c.morphPhase = Math.random() * Math.PI * 2;
         c.driftPhase = Math.random() * Math.PI * 2;
+        c.layerOffsets = [];
       }
     });
 
-    // Ship control - independent of terrain parallax movement
-=======
-
-    // Ship control - independent of terrain parallax movement
-=======
-        c.layerOffsets = []; // Reset layer offsets for new positioning
-      }
-    });
-
-    // Ship control - independent of terrain parallax movement
-=======
-      }
-    });
-
-    // Ship control - independent of terrain parallax movement
-=======
-
-    // Ship control - independent of terrain parallax movement
+    // Ship control
     const k = st.keys;
     st.ship.vx = (k['ArrowRight'] ? 1 : 0) * st.ship.speed - (k['ArrowLeft'] ? 1 : 0) * st.ship.speed * 0.8;
     st.ship.vy = (k['ArrowDown'] ? 1 : 0) * st.ship.speed - (k['ArrowUp'] ? 1 : 0) * st.ship.speed;
     
-    // Ship auto-scroll - independent constant forward movement
-    const shipAutoScrollSpeed = totalScrollSpeed * 0.4; // Ship moves slower than foreground terrain
+    const shipAutoScrollSpeed = totalScrollSpeed * 0.4;
     st.ship.x += (shipAutoScrollSpeed + st.ship.vx) * dt;
     st.ship.y += (st.ship.vy) * dt;
 
-    // Clamp ship inside safe bounds and above ground
     st.ship.x = Math.max(20, Math.min(st.width * 0.7, st.ship.x));
     const groundYAtShip = groundYAt(st.ship.x);
     st.ship.y = Math.max(40, Math.min(groundYAtShip - st.ship.h - 10, st.ship.y));
 
-    // Update ship animation properties
-    st.ship.thrusterTime += dt * 8; // fast thruster flicker
-    st.ship.wingFlicker += dt * 6; // wing light flicker
+    st.ship.thrusterTime += dt * 8;
+    st.ship.wingFlicker += dt * 6;
     const isMoving = Math.abs(st.ship.vx) > 50 || Math.abs(st.ship.vy) > 50;
     st.ship.engineHeat = Math.max(0, st.ship.engineHeat + (isMoving ? dt * 3 : -dt * 2));
     st.ship.engineHeat = Math.min(1, st.ship.engineHeat);
 
-    // Update ship damage flash
     if (st.ship.damageFlash > 0) {
       st.ship.damageFlash -= dt * 1000;
       if (st.ship.damageFlash < 0) st.ship.damageFlash = 0;
     }
 
-    // Spawn rockets
     spawnRockets(dt);
 
-    // Update rockets
+    // Enhanced AI rocket update system
     const g = 320 + level * 6;
     st.rockets.forEach(r => {
-      // Rockets move relative to terrain, accounting for terrain parallax speed
+      // Enable targeting once rocket is airborne and active
+      if (!r.active && r.y < groundYAt(r.x) - 30) {
+        r.active = true;
+        r.targetingEnabled = true;
+        r.interceptMode = true;
+      }
+
+      // Enhanced AI targeting logic for active rockets
+      if (r.active && r.targetingEnabled && r.interceptMode) {
+        const rocketCenterX = r.x + r.w * 0.5;
+        const rocketCenterY = r.y + r.h * 0.5;
+        
+        const shipCenterX = st.ship.x + st.ship.w * 0.5;
+        const shipCenterY = st.ship.y + st.ship.h * 0.5;
+        
+        const shipVelX = st.ship.vx || 0;
+        const shipVelY = st.ship.vy || 0;
+        
+        const predictionTime = Math.min(r.predictionTime, 2.0);
+        const predictedShipX = shipCenterX + shipVelX * predictionTime;
+        const predictedShipY = shipCenterY + shipVelY * predictionTime;
+        
+        const deltaX = predictedShipX - rocketCenterX;
+        const deltaY = predictedShipY - rocketCenterY;
+        const distanceToTarget = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+        
+        const desiredAngle = Math.atan2(deltaY, deltaX);
+        const currentAngle = Math.atan2(r.vy, r.vx);
+        
+        let angleDiff = desiredAngle - currentAngle;
+        
+        while (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        while (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+        
+        const maxTurnThisFrame = r.maxTurnRate * dt;
+        const actualTurnAmount = Math.max(-maxTurnThisFrame, Math.min(maxTurnThisFrame, angleDiff));
+        
+        const newAngle = currentAngle + actualTurnAmount;
+        const currentSpeed = Math.sqrt(r.vx * r.vx + r.vy * r.vy);
+        
+        const steeringIntensity = Math.min(1.0, distanceToTarget / 200);
+        const steeringMultiplier = steeringIntensity * (r.steeringForce / 200) * dt;
+        
+        const targetVelX = Math.cos(newAngle) * currentSpeed;
+        const targetVelY = Math.sin(newAngle) * currentSpeed;
+        
+        r.vx += (targetVelX - r.vx) * steeringMultiplier;
+        r.vy += (targetVelY - r.vy) * steeringMultiplier;
+        
+        if (distanceToTarget > 50) {
+          const interceptForceX = deltaX / distanceToTarget * r.steeringForce * 0.3 * dt;
+          const interceptForceY = deltaY / distanceToTarget * r.steeringForce * 0.3 * dt;
+          r.vx += interceptForceX;
+          r.vy += interceptForceY;
+        }
+        
+        r.lastTargetX = predictedShipX;
+        r.lastTargetY = predictedShipY;
+        
+        const shipSpeedChange = Math.abs((st.ship.vx || 0) - (st.ship.lastVx || 0)) + 
+                               Math.abs((st.ship.vy || 0) - (st.ship.lastVy || 0));
+        if (shipSpeedChange > 100) {
+          r.steeringForce *= 1.1;
+          r.maxTurnRate *= 1.05;
+        }
+      }
+      
       r.x += (r.vx - terrainScrollSpeed) * dt;
       r.y += r.vy * dt;
-      r.vy += g * dt * 0.35; // simple gravity after launch
-      if (!r.active && r.y < groundYAt(r.x) - 30) r.active = true;
       
-      // Update rocket animation properties
-      r.exhaustTime += dt * 12; // fast exhaust flicker
-      r.wobble += dt * 3; // subtle wobble during flight
-      if (r.vy < 0) r.launched = true; // rocket is launching upward
+      const gravityReduction = (r.active && r.interceptMode) ? 0.15 : 0.35;
+      r.vy += g * dt * gravityReduction;
       
-      // Create exhaust particles for active rockets
-      if (r.launched && r.active && Math.random() < 0.3) {
+      r.exhaustTime += dt * 12;
+      r.wobble += dt * 3;
+      if (r.vy < 0) r.launched = true;
+      
+      const exhaustChance = (r.active && r.interceptMode) ? 0.5 : 0.3;
+      if (r.launched && r.active && Math.random() < exhaustChance) {
         const exhaustX = r.x + r.w * 0.5;
         const exhaustY = r.y + r.h;
+        const exhaustIntensity = (r.active && r.interceptMode) ? 1.5 : 1.0;
         st.particles.push({
           x: exhaustX + (Math.random() - 0.5) * 2,
           y: exhaustY + Math.random() * 3,
-          vx: (Math.random() - 0.5) * 30,
-          vy: 80 + Math.random() * 40,
+          vx: (Math.random() - 0.5) * 30 * exhaustIntensity,
+          vy: 80 + Math.random() * 40 * exhaustIntensity,
           life: 300 + Math.random() * 200,
           age: 0,
-          size: 1 + Math.random() * 2,
+          size: (1 + Math.random() * 2) * exhaustIntensity,
           type: 'rocket_exhaust',
           color: ['#F59E0B', '#FEF3C7', '#D97706'][Math.floor(Math.random() * 3)]
         });
       }
     });
+    
+    st.ship.lastVx = st.ship.vx;
+    st.ship.lastVy = st.ship.vy;
     st.rockets = st.rockets.filter(r => r.x > -60 && r.y < st.height + 60);
 
-    // Update bullets - move relative to terrain scrolling
+    // Update bullets
     st.bullets.forEach(b => { 
       b.x += (b.vx - terrainScrollSpeed) * dt; 
       b.y += b.vy * dt; 
     });
     st.bullets = st.bullets.filter(b => b.x < st.width + 40 && b.x > -40);
 
-    // Update bombs - move relative to terrain scrolling
+    // Update bombs
     st.bombs.forEach(b => {
       b.x += (b.vx - terrainScrollSpeed) * dt;
       b.y += b.vy * dt;
@@ -807,8 +726,7 @@ function GameCanvas({
     st.bombs = st.bombs.filter(b => {
       const exploded = (nowMs - b.spawn) > b.fuse || b.y > groundYAt(b.x) - 4;
       if (exploded) {
-        explode(b.x, b.y, 24, 'heavy'); // Heavy explosion for bombs
-        // Destroy rockets in radius
+        explode(b.x, b.y, 24, 'heavy');
         const radius = 90;
         let destroyed = 0;
         st.rockets = st.rockets.filter(r => {
@@ -817,7 +735,7 @@ function GameCanvas({
           const d2 = (cx - b.x) ** 2 + (cy - b.y) ** 2;
           if (d2 < radius * radius) { 
             destroyed++; 
-            explode(cx, cy, 12, 'medium'); // Medium explosions for destroyed rockets
+            explode(cx, cy, 12, 'medium');
             return false; 
           }
           return true;
@@ -851,7 +769,7 @@ function GameCanvas({
     st.rockets = st.rockets.filter(r => {
       if (r.active && aabb(shipBox, r)) {
         explode(st.ship.x + st.ship.w / 2, st.ship.y + st.ship.h / 2, 20, 'heavy');
-        st.ship.damageFlash = 500; // Flash for 500ms
+        st.ship.damageFlash = 500;
         damage++;
         return false;
       }
@@ -866,26 +784,20 @@ function GameCanvas({
       onLevelProgress && onLevelProgress();
     }
 
-    // Update weather and lighting systems
     updateWeatherSystems(dt);
 
-    // Draw scene in correct depth order
-    drawSky(ctx);           // background gradient with time-of-day coloring
-    drawStars(ctx);         // distant stars (deepest)
-    drawNebulae(ctx);       // nebulae behind clouds
-    drawClouds(ctx);        // clouds in the sky
-    drawFogLayers(ctx, 'back'); // background fog layers
-    drawMountains(ctx);     // distant mountains
-    drawHills(ctx);         // midground rolling hills
-    drawFogLayers(ctx, 'mid'); // midground fog layers
-    drawTerrain(ctx);       // playable ground (foreground)
+    drawSky(ctx);
+    drawStars(ctx);
+    drawNebulae(ctx);
+    drawClouds(ctx);
+    drawMountains(ctx);
+    drawHills(ctx);
+    drawTerrain(ctx);
 
-    // Draw rockets with enhanced visuals
     st.rockets.forEach(r => {
       drawRocket(ctx, r);
     });
 
-    // Draw bullets
     st.bullets.forEach(b => {
       ctx.beginPath();
       ctx.fillStyle = '#DC2626';
@@ -893,7 +805,6 @@ function GameCanvas({
       ctx.fill();
     });
 
-    // Draw bombs
     st.bombs.forEach(b => {
       ctx.beginPath();
       ctx.fillStyle = '#6B7280';
@@ -901,34 +812,27 @@ function GameCanvas({
       ctx.fill();
     });
 
-    // Update and draw enhanced particles
     st.particles.forEach(p => {
       p.x += p.vx * dt; 
       p.y += p.vy * dt;
       
-      // Apply different physics based on particle type
       if (p.type === 'flame') {
-        p.vx *= 0.95; // flames slow down faster
+        p.vx *= 0.95;
         p.vy *= 0.95;
-        p.vy -= 20 * dt; // flames rise
+        p.vy -= 20 * dt;
       } else if (p.type === 'spark') {
-        p.vx *= 0.92; // sparks have medium friction
+        p.vx *= 0.92;
         p.vy *= 0.92;
-        p.vy += 80 * dt; // sparks fall
+        p.vy += 80 * dt;
       } else if (p.type === 'debris') {
-        p.vx *= 0.98; // debris maintains momentum longer
+        p.vx *= 0.98;
         p.vy *= 0.98;
-        p.vy += 120 * dt; // debris falls faster
+        p.vy += 120 * dt;
       } else if (p.type === 'rocket_exhaust') {
-        p.vx *= 0.90; // exhaust spreads and slows
+        p.vx *= 0.90;
         p.vy *= 0.94;
-        p.vy += 60 * dt; // exhaust falls with some resistance
-      } else if (p.type === 'thruster_flame') {
-        p.vx *= 0.88; // thruster flames spread quickly
-        p.vy *= 0.88;
-        p.vy += 30 * dt; // slight downward drift
+        p.vy += 60 * dt;
       } else {
-        // Legacy particle behavior
         p.vx *= 0.98; 
         p.vy *= 0.98;
       }
@@ -938,10 +842,8 @@ function GameCanvas({
       ctx.globalAlpha = alpha;
       ctx.fillStyle = p.color;
       
-      // Draw particles with size variation
       const size = p.size || 3;
       if (p.type === 'flame') {
-        // Draw flame particles as circles with slight glow
         ctx.beginPath();
         ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
         ctx.fill();
@@ -952,28 +854,17 @@ function GameCanvas({
           ctx.fill();
         }
       } else if (p.type === 'spark') {
-        // Draw sparks as bright small circles
         ctx.beginPath();
         ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
         ctx.fill();
       } else if (p.type === 'rocket_exhaust') {
-        // Draw rocket exhaust as small oval flames
         ctx.save();
-        ctx.scale(1, 1.5); // stretch vertically for flame shape
+        ctx.scale(1, 1.5);
         ctx.beginPath();
         ctx.arc(p.x, p.y / 1.5, size * 0.8, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
-      } else if (p.type === 'thruster_flame') {
-        // Draw thruster flames as elongated particles
-        ctx.save();
-        ctx.scale(0.7, 1.8); // stretch for thruster flame
-        ctx.beginPath();
-        ctx.arc(p.x / 0.7, p.y / 1.8, size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
       } else {
-        // Draw debris as rectangles
         ctx.fillRect(p.x - size/2, p.y - size/2, size, size);
       }
       
@@ -981,7 +872,6 @@ function GameCanvas({
     });
     st.particles = st.particles.filter(p => p.age < p.life);
 
-    // Update and draw shockwaves
     st.shockwaves.forEach(s => {
       s.age += dt * 1000;
       s.radius = (s.age / s.life) * s.maxRadius;
@@ -997,16 +887,10 @@ function GameCanvas({
     });
     st.shockwaves = st.shockwaves.filter(s => s.age < s.life);
 
-    // Draw ship with enhanced visuals
     drawEnhancedShip(ctx, st.ship, dt);
 
-    // Draw foreground fog layers
-    drawFogLayers(ctx, 'front');
-
-    // Restore camera transform
     ctx.restore();
 
-    // Draw screen flash effects (above camera shake)
     st.flashes.forEach(f => {
       f.age += dt * 1000;
       const alpha = Math.max(0, 1 - f.age / f.life) * f.alpha;
@@ -1020,12 +904,6 @@ function GameCanvas({
     });
     st.flashes = st.flashes.filter(f => f.age < f.life);
 
-    // Draw lightning effects (above everything else)
-    drawLightningEffects(ctx, dt);
-
-    // Apply time-of-day lighting overlay
-    drawTimeOfDayOverlay(ctx);
-
     if (running) {
       requestAnimationFrame(loop);
     }
@@ -1033,184 +911,45 @@ function GameCanvas({
 
   function groundYAt(x) {
     const st = stateRef.current;
-    // terrain points every 6px, with offset for scroll
     const idx = Math.floor((x + st.terrainOffset) / 6);
     return st.terrain[idx]?.y ?? st.height * 0.85;
   }
 
-  // Weather System Updates
-  
   function updateWeatherSystems(dt) {
     const st = stateRef.current;
     const weather = st.weather;
     
-    // Update time of day (full cycle in ~12.5 minutes)
     weather.timeOfDay += weather.timeSpeed * dt;
     if (weather.timeOfDay > 1) weather.timeOfDay -= 1;
     
-    // Update lightning system
     weather.lightningTimer += dt * 1000;
     if (weather.lightningTimer >= weather.lightningInterval) {
-      triggerLightning();
       weather.lightningTimer = 0;
-      weather.lightningInterval = 8000 + Math.random() * 12000; // Next strike in 8-20 seconds
+      weather.lightningInterval = 8000 + Math.random() * 12000;
     }
     
-    // Update active lightning
-    if (weather.activeLightning) {
-      weather.activeLightning.age += dt * 1000;
-      if (weather.activeLightning.age >= weather.activeLightning.duration) {
-        weather.activeLightning = null;
-      }
-    }
-    
-    // Update fog layers
     weather.fogLayers.forEach(fog => {
       fog.x += fog.vx * dt;
       fog.wavePhase += fog.waveSpeed * dt;
       
-      // Wrap fog around screen
       if (fog.x + fog.width < -st.width * 0.5) {
         fog.x = st.width + Math.random() * st.width;
       }
     });
     
-    // Slight variations in weather intensity
     weather.weatherIntensity += (Math.random() - 0.5) * dt * 0.1;
     weather.weatherIntensity = Math.max(0.2, Math.min(1.0, weather.weatherIntensity));
   }
-  
-  function triggerLightning() {
-    const st = stateRef.current;
-    
-    // Create lightning flash effect
-    st.weather.activeLightning = {
-      age: 0,
-      duration: 150 + Math.random() * 100, // 150-250ms flash
-      intensity: 0.6 + Math.random() * 0.4,
-      x: Math.random() * st.width,
-      y: Math.random() * st.height * 0.4, // Upper portion of screen
-      branches: Math.floor(2 + Math.random() * 4), // 2-5 lightning branches
-    };
-    
-    // Add screen flash for lightning
-    st.flashes.push({
-      alpha: 0.3 + Math.random() * 0.2,
-      life: 100 + Math.random() * 50,
-      age: 0,
-      color: '#FEF3C7' // Heritage cream lightning flash
-    });
-    
-    // Optional: trigger mild screen shake for dramatic effect
-    triggerScreenShake(3, 200);
-  }
-
-  // Visuals
 
   function drawSky(ctx) {
     const st = stateRef.current;
-    const timeOfDay = st.weather.timeOfDay;
-    
-    // Calculate sky colors based on time of day
-    let topColor, midColor, bottomColor;
-    
-    if (timeOfDay < 0.125) { // Dawn (0-0.125)
-      const t = timeOfDay / 0.125;
-      topColor = lerpColor('#2D1B69', '#F7F2E6', t); // Deep night to light cream
-      midColor = lerpColor('#4C1D95', '#F3E9D2', t);
-      bottomColor = lerpColor('#5B21B6', '#FDF6E3', t);
-    } else if (timeOfDay < 0.375) { // Day (0.125-0.375)
-      topColor = '#F7F2E6'; // Light heritage cream
-      midColor = '#F3E9D2'; // Medium heritage cream
-      bottomColor = '#FDF6E3'; // Light heritage beige
-    } else if (timeOfDay < 0.625) { // Dusk (0.375-0.625)
-      const t = (timeOfDay - 0.375) / 0.25;
-      topColor = lerpColor('#F7F2E6', '#E6B17A', t); // Cream to heritage amber
-      midColor = lerpColor('#F3E9D2', '#D2B48C', t); // Cream to tan
-      bottomColor = lerpColor('#FDF6E3', '#DCC4A0', t); // Beige to darker beige
-    } else { // Night (0.625-1.0)
-      const t = (timeOfDay - 0.625) / 0.375;
-      topColor = lerpColor('#E6B17A', '#2D1B69', t); // Amber to deep night
-      midColor = lerpColor('#D2B48C', '#4C1D95', t);
-      bottomColor = lerpColor('#DCC4A0', '#5B21B6', t);
-    }
-    
     const grd = ctx.createLinearGradient(0, 0, 0, st.height);
-    grd.addColorStop(0, topColor);
-    grd.addColorStop(0.6, midColor);
-    grd.addColorStop(1, bottomColor);
+    grd.addColorStop(0, '#F7F2E6');
+    grd.addColorStop(0.6, '#F3E9D2');
+    grd.addColorStop(1, '#FDF6E3');
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, st.width, st.height);
   }
-  
-  function lerpColor(color1, color2, t) {
-    // Helper function to interpolate between two hex colors
-    const hex1 = parseInt(color1.substring(1), 16);
-    const hex2 = parseInt(color2.substring(1), 16);
-    
-    const r1 = (hex1 >> 16) & 255;
-    const g1 = (hex1 >> 8) & 255;
-    const b1 = hex1 & 255;
-    
-    const r2 = (hex2 >> 16) & 255;
-    const g2 = (hex2 >> 8) & 255;
-    const b2 = hex2 & 255;
-    
-    const r = Math.round(r1 + (r2 - r1) * t);
-    const g = Math.round(g1 + (g2 - g1) * t);
-    const b = Math.round(b1 + (b2 - b1) * t);
-    
-    return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
-  }
-
-  function drawClouds(ctx) {
-    const st = stateRef.current;
-    ctx.save();
-    
-    // Sort clouds by depth layer for proper layered rendering
-    const sortedClouds = [...st.clouds].sort((a, b) => b.depthLayer - a.depthLayer);
-    
-    sortedClouds.forEach(cloud => {
-      // Skip clouds outside visible area for performance
-      const cloudSize = (15 + cloud.scale * 8) * 3; // Estimated cloud size
-      if (cloud.x > -cloudSize && cloud.x < st.width + cloudSize) {
-
-  function drawStars(ctx) {
-=======
-    });\n    \n    ctx.restore();\n  }\n\n  function drawStars(ctx) {
-=======
-    ctx.restore();
-  }
-
-  function drawStars(ctx) {
-=======
-
-  function drawStars(ctx) {
-=======
-        drawAdvancedCloudShape(ctx, cloud);
-      }
-    });
-    
-    ctx.restore();
-  }
-
-  function drawStars(ctx) {
-=======
-
-  function drawStars(ctx) {
-=======
-    });
-    
-    ctx.restore();
-  }
-
-  function drawStars(ctx) {
-=======
-    ctx.restore();
-  }
-
-  function drawStars(ctx) {
-=======
 
   function drawStars(ctx) {
     const st = stateRef.current;
@@ -1220,19 +959,16 @@ function GameCanvas({
       const alpha = s.brightness * twinkle;
       const x = s.x - st.starsOffset;
       
-      // Skip stars outside visible area
       if (x < -10 || x > st.width + 10) return;
       
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#F7F2E6'; // Heritage cream-white for stars
+      ctx.fillStyle = '#F7F2E6';
       ctx.beginPath();
       
-      // Draw star shape
       const size = s.scale * 2;
       ctx.arc(x, s.y, size, 0, Math.PI * 2);
       ctx.fill();
       
-      // Add subtle glow for larger stars
       if (s.scale > 0.8) {
         ctx.globalAlpha = alpha * 0.3;
         ctx.beginPath();
@@ -1252,28 +988,24 @@ function GameCanvas({
       const alpha = n.opacity * pulse;
       const x = n.x - st.nebulaeOffset;
       
-      // Skip nebulae outside visible area
       if (x < -400 * n.scale || x > st.width + 400 * n.scale) return;
       
       ctx.globalAlpha = alpha;
       
-      // Heritage Brown theme nebula colors
       const colors = [
-        '#E4D4B8', // light heritage cream
-        '#D2C2A6', // medium heritage tan
-        '#C8B68A'  // darker heritage beige
+        '#E4D4B8',
+        '#D2C2A6',
+        '#C8B68A'
       ];
       ctx.fillStyle = colors[n.colorType % colors.length];
       
-      // Draw nebula as gradient blob
       const grd = ctx.createRadialGradient(x, n.y, 0, x, n.y, 120 * n.scale);
       grd.addColorStop(0, colors[n.colorType % colors.length]);
-      grd.addColorStop(0.6, colors[n.colorType % colors.length] + '80'); // semi-transparent
+      grd.addColorStop(0.6, colors[n.colorType % colors.length] + '80');
       grd.addColorStop(1, 'transparent');
       
       ctx.fillStyle = grd;
       ctx.beginPath();
-      // Create organic nebula shape using multiple overlapping circles
       for (let i = 0; i < 5; i++) {
         const offsetX = (Math.sin(n.pulsePhase + i) * 20 * n.scale);
         const offsetY = (Math.cos(n.pulsePhase + i * 0.7) * 15 * n.scale);
@@ -1286,236 +1018,47 @@ function GameCanvas({
     ctx.restore();
   }
 
-  function drawAdvancedCloudShape(ctx, cloud) {
-    const { x, currentY, scale, currentOpacity, cloudType, morphPhase, morphIntensity, 
-            colorVariant, softness, volumeIntensity, layerCount, layerOffsets, depthLayer } = cloud;
-    
+  function drawClouds(ctx) {
+    const st = stateRef.current;
     ctx.save();
     
-    // Heritage Brown cloud color palette - 5 sophisticated variations
-    const heritageCloudColors = [
-      { base: '#F7F2E6', highlight: '#FFFBF0', shadow: '#E8DCC6' }, // Lightest cream
-      { base: '#F3E9D2', highlight: '#F9F0E3', shadow: '#E0D4B8' }, // Light heritage cream
-      { base: '#EFE2C7', highlight: '#F5EDDB', shadow: '#D9CEB0' }, // Medium heritage cream
-      { base: '#E8DCC6', highlight: '#F0E5D3', shadow: '#D2C2A6' }, // Deeper heritage cream
-      { base: '#E0D4B8', highlight: '#E8DCC6', shadow: '#C8B68A' }  // Darkest heritage cream
-    ];
+    const sortedClouds = [...st.clouds].sort((a, b) => b.depthLayer - a.depthLayer);
     
-    const cloudColors = heritageCloudColors[colorVariant % heritageCloudColors.length];
-    
-    // Calculate morphing effects for organic shape changes
-    const morphX = Math.sin(morphPhase) * morphIntensity * scale * 10;
-    const morphY = Math.cos(morphPhase * 1.3) * morphIntensity * scale * 6;
-    const morphScale = 1 + Math.sin(morphPhase * 0.8) * morphIntensity * 0.3;
-    
-    const baseRadius = (15 + scale * 8) * morphScale;
-    const cloudX = x + morphX;
-    const cloudY = currentY + morphY;
-    
-    // Draw multiple layered cloud elements for sophisticated semi-transparency
-    for (let layer = 0; layer < layerCount; layer++) {
-      const layerData = layerOffsets[layer] || { x: 0, y: 0, scale: 1, opacity: 0.5 };
-      const layerX = cloudX + layerData.x;
-      const layerY = cloudY + layerData.y;
-      const layerScale = layerData.scale;
-      const layerOpacity = currentOpacity * layerData.opacity * (0.4 + layer * 0.3);
-      
-      ctx.globalAlpha = layerOpacity;
-      
-      // Create sophisticated gradient fill with volume effect
-      const gradientSize = baseRadius * layerScale * 2.5;
-      const volumeGradient = ctx.createRadialGradient(
-        layerX - gradientSize * 0.2, layerY - gradientSize * 0.15, 0, // Offset center for volume
-        layerX, layerY, gradientSize
-      );
-      
-      // Multi-stop gradient for sophisticated volume and lighting
-      volumeGradient.addColorStop(0, cloudColors.highlight + 'E6'); // Bright center
-      volumeGradient.addColorStop(0.2, cloudColors.base + 'D9'); // Main cloud color
-      volumeGradient.addColorStop(0.5, cloudColors.base + 'B3'); // Mid transparency
-      volumeGradient.addColorStop(0.8, cloudColors.shadow + '80'); // Shadow edge
-      volumeGradient.addColorStop(1, cloudColors.shadow + '00'); // Transparent edge
-      
-      ctx.fillStyle = volumeGradient;
-      
-      // Draw sophisticated cloud shapes based on type with morphing
-      ctx.beginPath();
-      
-      if (cloudType === 0) {
-        // Cumulus-style puffy cloud
-        drawPuffyCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
-      } else if (cloudType === 1) {
-        // Stratus-style elongated cloud  
-        drawStratusCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
-      } else if (cloudType === 2) {
-        // Cirrus-style wispy cloud
-        drawCirrusCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
-      } else {
-        // Hybrid complex cloud
-        drawComplexCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
+    sortedClouds.forEach(cloud => {
+      const cloudSize = (15 + cloud.scale * 8) * 3;
+      if (cloud.x > -cloudSize && cloud.x < st.width + cloudSize) {
+        drawAdvancedCloudShape(ctx, cloud);
       }
-      
-      ctx.fill();
-      
-      // Add subtle outline for volume definition (very soft)
-      if (layer === 0) { // Only on base layer to avoid overdoing it
-        ctx.globalAlpha = currentOpacity * 0.3;
-        ctx.strokeStyle = cloudColors.shadow + '60';
-        ctx.lineWidth = 1 + scale * 0.5;
-        ctx.stroke();
-      }
-    }
+    });
     
-    // Add soft highlight streaks for extra volume and light interaction
-    ctx.globalAlpha = currentOpacity * volumeIntensity * 0.4;
-    ctx.fillStyle = cloudColors.highlight + 'A0';
-    
-    // Highlight streaks that follow cloud morphing
-    const streakLength = baseRadius * 1.5;
-    const streakWidth = 2 + scale * 1.5;
-    for (let i = 0; i < 2; i++) {
-      const streakAngle = morphPhase * 0.5 + i * Math.PI * 0.7;
-      const streakX = cloudX + Math.cos(streakAngle) * baseRadius * 0.3;
-      const streakY = cloudY + Math.sin(streakAngle) * baseRadius * 0.2;
-      
-      ctx.save();
-      ctx.translate(streakX, streakY);
-      ctx.rotate(streakAngle);
-      ctx.fillRect(-streakLength * 0.5, -streakWidth * 0.5, streakLength, streakWidth);
-      ctx.restore();
-    }
-    
-    ctx.globalAlpha = 1;
     ctx.restore();
   }
-  
-  function drawPuffyCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
-    // Cumulus-style cloud with dynamic morphing
-    const segments = 8;
-    let started = false;
+
+  function drawAdvancedCloudShape(ctx, cloud) {
+    const { x, currentY, scale, currentOpacity } = cloud;
     
-    for (let i = 0; i <= segments; i++) {
-      const angle = (i / segments) * Math.PI * 2;
-      const morphOffset = Math.sin(morphPhase + angle * 3) * morphIntensity * radius * 0.4;
-      const segmentRadius = radius * (0.8 + Math.sin(angle * 2 + morphPhase) * 0.3) + morphOffset;
-      const px = x + Math.cos(angle) * segmentRadius;
-      const py = y + Math.sin(angle) * segmentRadius * 0.7; // Slightly flattened
-      
-      if (!started) {
-        ctx.moveTo(px, py);
-        started = true;
-      } else {
-        ctx.lineTo(px, py);
-      }
-    }
-    ctx.closePath();
+    ctx.save();
+    ctx.globalAlpha = currentOpacity || 0.5;
+    ctx.fillStyle = '#F3E9D2';
+    
+    const radius = (15 + scale * 8);
+    ctx.beginPath();
+    ctx.arc(x, currentY || cloud.y, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.restore();
   }
-  
-  function drawStratusCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
-    // Elongated horizontal cloud
-    const width = radius * 2.5;
-    const height = radius * 0.6;
-    const segments = 12;
-    
-    ctx.moveTo(x - width * 0.5, y);
-    
-    // Top curve with morphing
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const px = x + (t - 0.5) * width;
-      const morphY = Math.sin(morphPhase + t * Math.PI * 4) * morphIntensity * height * 0.5;
-      const py = y - height * 0.5 + morphY;
-      ctx.lineTo(px, py);
-    }
-    
-    // Bottom curve with morphing
-    for (let i = segments; i >= 0; i--) {
-      const t = i / segments;
-      const px = x + (t - 0.5) * width;
-      const morphY = Math.sin(morphPhase * 1.3 + t * Math.PI * 3) * morphIntensity * height * 0.3;
-      const py = y + height * 0.5 + morphY;
-      ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-  }
-  
-  function drawCirrusCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
-    // Wispy, streaky cloud
-    const segments = 15;
-    const wispiness = 0.6;
-    
-    ctx.moveTo(x - radius, y);
-    
-    for (let i = 0; i <= segments; i++) {
-      const t = i / segments;
-      const angle = t * Math.PI * 4 + morphPhase;
-      const wisp = Math.sin(angle) * wispiness * radius;
-      const morphY = Math.sin(morphPhase * 2 + t * Math.PI * 6) * morphIntensity * radius * 0.4;
-      
-      const px = x + (t - 0.5) * radius * 2.8;
-      const py = y + wisp + morphY;
-      
-      if (i === 0) {
-        ctx.moveTo(px, py);
-      } else {
-        ctx.lineTo(px, py);
-      }
-    }
-    
-    // Return path for closed shape
-    for (let i = segments; i >= 0; i--) {
-      const t = i / segments;
-      const angle = t * Math.PI * 3 + morphPhase * 1.5;
-      const wisp = Math.sin(angle) * wispiness * radius * 0.5;
-      const morphY = Math.sin(morphPhase * 1.7 + t * Math.PI * 5) * morphIntensity * radius * 0.3;
-      
-      const px = x + (t - 0.5) * radius * 2.8;
-      const py = y + wisp + morphY + radius * 0.4;
-      ctx.lineTo(px, py);
-    }
-    ctx.closePath();
-  }
-  
-  function drawComplexCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
-    // Complex hybrid cloud with multiple bumps and organic shapes
-    const primaryBumps = 6;
-    const secondaryBumps = 12;
-    
-    ctx.moveTo(x + radius, y);
-    
-    // Primary shape with large organic bumps
-    for (let i = 0; i <= primaryBumps; i++) {
-      const angle = (i / primaryBumps) * Math.PI * 2;
-      const bumpMorph = Math.sin(morphPhase + angle * 2) * morphIntensity;
-      const bumpRadius = radius * (0.7 + Math.sin(angle * 1.5 + morphPhase * 0.8) * 0.4 + bumpMorph);
-      
-      // Add secondary detail bumps
-      for (let j = 0; j < 2; j++) {
-        const subAngle = angle + (j / 2) * (Math.PI * 2 / primaryBumps);
-        const subMorph = Math.sin(morphPhase * 1.5 + subAngle * 4) * morphIntensity * 0.5;
-        const subRadius = bumpRadius * (0.9 + subMorph);
-        
-        const px = x + Math.cos(subAngle) * subRadius;
-        const py = y + Math.sin(subAngle) * subRadius * 0.8;
-        ctx.lineTo(px, py);
-      }
-    }
-    ctx.closePath();
-  }
-=======
 
   function drawMountains(ctx) {
     const st = stateRef.current;
     const pts = st.mountains;
     if (!pts.length) return;
     ctx.save();
-    // deep muted brown silhouette
     ctx.fillStyle = '#AE8B5C';
     ctx.strokeStyle = '#987447';
     ctx.lineWidth = 2;
 
     ctx.beginPath();
-    // shift points by parallax offset
     let started = false;
     const period = (pts[pts.length - 1]?.x || 0) + 200;
     const off = st.mountainsOffset % period;
@@ -1530,7 +1073,6 @@ function GameCanvas({
     ctx.lineTo(0, st.height);
     ctx.closePath();
     ctx.fill();
-    // optional subtle stroke for ridge definition
     ctx.globalAlpha = 0.35;
     ctx.stroke();
     ctx.globalAlpha = 1;
@@ -1542,7 +1084,6 @@ function GameCanvas({
     const pts = st.hills;
     if (!pts.length) return;
     ctx.save();
-    // midground hill coloring
     ctx.fillStyle = '#C8B68A';
     ctx.strokeStyle = '#B89D6C';
     ctx.lineWidth = 2;
@@ -1571,7 +1112,6 @@ function GameCanvas({
   function drawTerrain(ctx) {
     const st = stateRef.current;
     ctx.save();
-    // foreground ground (playable)
     ctx.fillStyle = '#D6C8A5';
     ctx.strokeStyle = '#B89D6C';
     ctx.lineWidth = 2;
@@ -1597,182 +1137,11 @@ function GameCanvas({
     }
     ctx.restore();
   }
-  
-  function drawFogLayers(ctx, depthCategory) {
-    const st = stateRef.current;
-    const weather = st.weather;
-    
-    ctx.save();
-    
-    weather.fogLayers.forEach(fog => {
-      // Filter fog layers by depth category
-      const shouldDraw = 
-        (depthCategory === 'back' && fog.depth > 0.66) ||
-        (depthCategory === 'mid' && fog.depth > 0.33 && fog.depth <= 0.66) ||
-        (depthCategory === 'front' && fog.depth <= 0.33);
-      
-      if (!shouldDraw) return;
-      
-      // Skip fog outside visible area
-      if (fog.x + fog.width < 0 || fog.x > st.width) return;
-      
-      // Apply wave motion to fog position
-      const waveOffset = Math.sin(fog.wavePhase) * fog.waveAmplitude;
-      const fogY = fog.y + waveOffset;
-      
-      // Create fog gradient with Heritage Brown theme
-      const alpha = fog.opacity * weather.weatherIntensity;
-      ctx.globalAlpha = alpha;
-      
-      // Heritage Brown themed fog colors
-      const fogColors = [
-        '#E8DCC6', // Light heritage cream
-        '#DDD0B4', // Medium heritage beige  
-        '#D4C5A2', // Darker heritage tan
-      ];
-      
-      const colorIndex = Math.floor(fog.depth * fogColors.length);
-      const baseColor = fogColors[Math.min(colorIndex, fogColors.length - 1)];
-      
-      // Create radial gradient for organic fog shape
-      const centerX = fog.x + fog.width * 0.5;
-      const grd = ctx.createRadialGradient(
-        centerX, fogY, 0,
-        centerX, fogY, fog.width * 0.6
-      );
-      grd.addColorStop(0, baseColor + 'C0'); // Semi-transparent center
-      grd.addColorStop(0.6, baseColor + '80'); // More transparent
-      grd.addColorStop(1, baseColor + '00'); // Fully transparent edges
-      
-      ctx.fillStyle = grd;
-      
-      // Draw organic fog shape with multiple overlapping ellipses
-      ctx.beginPath();
-      for (let i = 0; i < 3; i++) {
-        const offsetX = Math.sin(fog.wavePhase + i * 0.7) * 20;
-        const offsetY = Math.cos(fog.wavePhase + i * 0.9) * 10;
-        const radiusX = fog.width * (0.3 + i * 0.1);
-        const radiusY = fog.height * (0.4 + i * 0.05);
-        
-        ctx.save();
-        ctx.translate(centerX + offsetX, fogY + offsetY);
-        ctx.scale(1, 0.6); // Flatten vertically for natural fog look
-        ctx.arc(0, 0, radiusX, 0, Math.PI * 2);
-        ctx.restore();
-      }
-      ctx.fill();
-    });
-    
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
-  
-  function drawLightningEffects(ctx, dt) {
-    const st = stateRef.current;
-    const lightning = st.weather.activeLightning;
-    
-    if (!lightning) return;
-    
-    ctx.save();
-    
-    // Calculate lightning intensity with flickering
-    const progress = lightning.age / lightning.duration;
-    const baseIntensity = lightning.intensity * (1 - progress);
-    const flicker = 0.7 + 0.3 * Math.sin(lightning.age * 0.05);
-    const intensity = baseIntensity * flicker;
-    
-    if (intensity > 0.05) {
-      ctx.globalAlpha = intensity;
-      ctx.strokeStyle = '#FEF3C7'; // Heritage cream lightning
-      ctx.shadowColor = '#F59E0B'; // Heritage orange glow
-      ctx.shadowBlur = 20;
-      
-      // Draw main lightning bolt
-      drawLightningBolt(ctx, lightning.x, 0, lightning.x + (Math.random() - 0.5) * 100, lightning.y);
-      
-      // Draw branching bolts
-      for (let i = 0; i < lightning.branches; i++) {
-        const branchStart = lightning.y * (0.3 + Math.random() * 0.4);
-        const branchEndX = lightning.x + (Math.random() - 0.5) * 200;
-        const branchEndY = lightning.y + Math.random() * 100;
-        
-        ctx.globalAlpha = intensity * (0.4 + Math.random() * 0.3);
-        drawLightningBolt(ctx, lightning.x, branchStart, branchEndX, branchEndY);
-      }
-    }
-    
-    ctx.restore();
-  }
-  
-  function drawLightningBolt(ctx, startX, startY, endX, endY) {
-    const segments = 8 + Math.floor(Math.random() * 6); // 8-13 segments
-    const jaggedness = 0.4; // How jagged the lightning appears
-    
-    ctx.beginPath();
-    ctx.lineWidth = 2 + Math.random() * 2;
-    ctx.lineCap = 'round';
-    
-    let currentX = startX;
-    let currentY = startY;
-    
-    ctx.moveTo(currentX, currentY);
-    
-    for (let i = 1; i <= segments; i++) {
-      const progress = i / segments;
-      const targetX = startX + (endX - startX) * progress;
-      const targetY = startY + (endY - startY) * progress;
-      
-      // Add random offset for jaggedness
-      const offsetX = (Math.random() - 0.5) * jaggedness * 100 * (1 - Math.abs(progress - 0.5) * 2);
-      const offsetY = (Math.random() - 0.5) * jaggedness * 50;
-      
-      currentX = targetX + offsetX;
-      currentY = targetY + offsetY;
-      
-      ctx.lineTo(currentX, currentY);
-    }
-    
-    ctx.stroke();
-  }
-  
-  function drawTimeOfDayOverlay(ctx) {
-    const st = stateRef.current;
-    const timeOfDay = st.weather.timeOfDay;
-    
-    // Apply subtle time-of-day tinting
-    let overlayColor = null;
-    let overlayAlpha = 0;
-    
-    if (timeOfDay < 0.125) { // Dawn
-      overlayColor = '#FEF3C7'; // Warm heritage cream
-      overlayAlpha = 0.1 * (1 - timeOfDay / 0.125);
-    } else if (timeOfDay >= 0.375 && timeOfDay < 0.625) { // Dusk
-      const t = (timeOfDay - 0.375) / 0.25;
-      overlayColor = '#F59E0B'; // Heritage orange
-      overlayAlpha = 0.15 * t;
-    } else if (timeOfDay >= 0.625) { // Night
-      const t = (timeOfDay - 0.625) / 0.375;
-      overlayColor = '#1E3A8A'; // Deep blue night
-      overlayAlpha = 0.3 * t;
-    }
-    
-    if (overlayColor && overlayAlpha > 0.01) {
-      ctx.save();
-      ctx.globalAlpha = overlayAlpha;
-      ctx.fillStyle = overlayColor;
-      ctx.globalCompositeOperation = 'overlay';
-      ctx.fillRect(0, 0, st.width, st.height);
-      ctx.restore();
-    }
-  }
 
   function drawEnhancedShip(ctx, s, dt) {
-    const st = stateRef.current;
-    
     ctx.save();
     ctx.translate(s.x, s.y);
     
-    // Apply damage flash effect
     if (s.damageFlash > 0) {
       const flashIntensity = (Math.sin(s.damageFlash * 0.02) + 1) * 0.5;
       ctx.globalAlpha = 0.7 + flashIntensity * 0.3;
@@ -1781,202 +1150,22 @@ function GameCanvas({
       ctx.globalAlpha = 1;
     }
     
-    // Enhanced thruster flames when moving
-    const isMoving = Math.abs(s.vx) > 50 || Math.abs(s.vy) > 50;
-    if (isMoving || s.engineHeat > 0.1) {
-      drawThrusterFlames(ctx, s);
-      
-      // Create thruster particles
-      if (Math.random() < 0.4) {
-        const thrusterX = s.x - 8 + Math.random() * 4;
-        const thrusterY = s.y + s.h * 0.5 + (Math.random() - 0.5) * s.h * 0.3;
-        st.particles.push({
-          x: thrusterX,
-          y: thrusterY,
-          vx: -120 - Math.random() * 80,
-          vy: (Math.random() - 0.5) * 40,
-          life: 200 + Math.random() * 150,
-          age: 0,
-          size: 1 + Math.random() * 2,
-          type: 'thruster_flame',
-          color: ['#F59E0B', '#FEF3C7', '#D97706'][Math.floor(Math.random() * 3)]
-        });
-      }
-    }
-    
-    // === ULTRA-SOPHISTICATED MULTI-LAYERED HULL CONSTRUCTION ===
-    
-    // Advanced time-based effects for dynamic metallic shimmer
     const timeShimmer = 0.8 + 0.2 * Math.sin(performance.now() * 0.001);
-    const microVibration = Math.sin(performance.now() * 0.003) * 0.3;
     
-    // Layer 0: Deep structural shadow for 3D depth
-    ctx.fillStyle = '#291107'; // Ultra-deep brown shadow
-    ctx.fillRect(2, 2, s.w, s.h);
-    
-    // Layer 1: Base hull shadow with offset for dimensional depth
-    ctx.fillStyle = '#451A03'; // Deep shadow brown
+    ctx.fillStyle = '#451A03';
     ctx.fillRect(1, 1, s.w, s.h);
     
-    // Layer 2: Ultra-complex multi-directional hull gradient with shimmer
     const hullGrd = ctx.createLinearGradient(0, 0, s.w, s.h);
-    hullGrd.addColorStop(0, '#5D1F0A');      // Deep edge shadow
-    hullGrd.addColorStop(0.08, '#7C2D12');   // Primary shadow edge
-    hullGrd.addColorStop(0.18, '#92400E');   // Primary Heritage brown
-    hullGrd.addColorStop(0.35, '#B45309');   // Mid highlight
-    hullGrd.addColorStop(0.5, `rgba(217, 119, 6, ${timeShimmer})`);  // Dynamic metallic shine
-    hullGrd.addColorStop(0.65, '#F59E0B');   // Bright metallic shine
-    hullGrd.addColorStop(0.8, '#B45309');    // Back to secondary
-    hullGrd.addColorStop(0.92, '#92400E');   // Return to primary
-    hullGrd.addColorStop(1, '#5D1F0A');      // Deep edge shadow
+    hullGrd.addColorStop(0, '#5D1F0A');
+    hullGrd.addColorStop(0.18, '#92400E');
+    hullGrd.addColorStop(0.5, `rgba(217, 119, 6, ${timeShimmer})`);
+    hullGrd.addColorStop(0.8, '#B45309');
+    hullGrd.addColorStop(1, '#5D1F0A');
     ctx.fillStyle = hullGrd;
     ctx.fillRect(0, 0, s.w, s.h);
     
-    // Layer 2.5: Surface texture overlay with Heritage Brown micro-pattern
-    ctx.globalAlpha = 0.15;
-    ctx.fillStyle = '#451A03';
-    for (let x = 2; x < s.w - 2; x += 3) {
-      for (let y = 4; y < s.h - 4; y += 4) {
-        if (Math.random() < 0.6) {
-          ctx.fillRect(x + Math.sin(y * 0.2) * 0.5, y, 1, 1);
-        }
-      }
-    }
-    ctx.globalAlpha = 1;
-    
-    // Layer 3: Complex geometric hull panel system with refined segmentation
-    ctx.strokeStyle = '#1A0700';
-    ctx.lineWidth = 0.8;
-    ctx.beginPath();
-    // Primary vertical panel divisions
-    ctx.moveTo(s.w * 0.2, 1);
-    ctx.lineTo(s.w * 0.2, s.h - 1);
-    ctx.moveTo(s.w * 0.4, 1);
-    ctx.lineTo(s.w * 0.4, s.h - 1);
-    ctx.moveTo(s.w * 0.6, 1);
-    ctx.lineTo(s.w * 0.6, s.h - 1);
-    ctx.moveTo(s.w * 0.78, 1);
-    ctx.lineTo(s.w * 0.78, s.h - 1);
-    // Horizontal structural divisions
-    ctx.moveTo(1, s.h * 0.3);
-    ctx.lineTo(s.w - 1, s.h * 0.3);
-    ctx.moveTo(1, s.h * 0.5);
-    ctx.lineTo(s.w - 1, s.h * 0.5);
-    ctx.moveTo(1, s.h * 0.7);
-    ctx.lineTo(s.w - 1, s.h * 0.7);
-    ctx.stroke();
-    
-    // Layer 3.5: Secondary panel detail lines
-    ctx.strokeStyle = 'rgba(69, 26, 3, 0.6)';
-    ctx.lineWidth = 0.3;
-    ctx.beginPath();
-    // Fine detail panel segments
-    for (let i = 0.25; i < 0.75; i += 0.125) {
-      ctx.moveTo(s.w * i, 3);
-      ctx.lineTo(s.w * i, s.h - 3);
-    }
-    // Horizontal micro-panels
-    for (let i = 0.35; i < 0.65; i += 0.1) {
-      ctx.moveTo(3, s.h * i);
-      ctx.lineTo(s.w - 3, s.h * i);
-    }
-    ctx.stroke();
-    
-    // Layer 4: Advanced metallic reflection system with dynamic positioning
-    const metalGrd = ctx.createLinearGradient(microVibration, 0, microVibration, s.h);
-    metalGrd.addColorStop(0, `rgba(254, 243, 199, ${0.9 * timeShimmer})`); // Ultra-bright cream reflection
-    metalGrd.addColorStop(0.15, `rgba(254, 243, 199, ${0.7 * timeShimmer})`);
-    metalGrd.addColorStop(0.35, `rgba(254, 243, 199, ${0.4 * timeShimmer})`);
-    metalGrd.addColorStop(0.6, `rgba(254, 243, 199, ${0.15 * timeShimmer})`);
-    metalGrd.addColorStop(1, 'rgba(254, 243, 199, 0)');
-    ctx.fillStyle = metalGrd;
-    ctx.fillRect(1, 0, s.w - 2, s.h * 0.5);
-    
-    // Layer 4.5: Secondary angled reflection streaks
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.6 * timeShimmer})`;
-    for (let i = 0; i < 4; i++) {
-      const x = s.w * (0.1 + i * 0.15);
-      const width = 1 + Math.sin(performance.now() * 0.002 + i) * 0.5;
-      ctx.fillRect(x, 2, width, s.h * 0.4);
-    }
-    
-    // Layer 5: Ultra-sophisticated hull armor strips with complex riveting
-    // Primary upper armor band
-    const armorGrd = ctx.createLinearGradient(0, 2, 0, 6);
-    armorGrd.addColorStop(0, '#C8822A'); // Bright metallic bronze
-    armorGrd.addColorStop(0.3, '#A16207'); // Metallic bronze
-    armorGrd.addColorStop(0.7, '#7C4A03'); // Darker bronze
-    armorGrd.addColorStop(1, '#451A03'); // Deep bronze shadow
-    ctx.fillStyle = armorGrd;
-    ctx.fillRect(2, 1, s.w - 4, 5);
-    
-    // Armor band highlight edge
-    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
-    ctx.fillRect(2, 1, s.w - 4, 1);
-    
-    // Ultra-detailed riveting system with varying sizes
-    ctx.fillStyle = '#291107';
-    for (let i = 6; i < s.w - 3; i += 4) {
-      // Main rivets
-      ctx.fillRect(i, 3, 1, 1);
-      // Micro rivets
-      if (i % 8 === 2) {
-        ctx.fillRect(i + 1, 2, 0.5, 0.5);
-        ctx.fillRect(i + 1, 4, 0.5, 0.5);
-      }
-    }
-    
-    // Secondary lower armor reinforcement with gradient
-    const lowerArmorGrd = ctx.createLinearGradient(0, s.h - 6, 0, s.h - 1);
-    lowerArmorGrd.addColorStop(0, '#451A03'); // Deep bronze shadow
-    lowerArmorGrd.addColorStop(0.3, '#7C4A03'); // Darker bronze
-    lowerArmorGrd.addColorStop(0.7, '#A16207'); // Metallic bronze
-    lowerArmorGrd.addColorStop(1, '#C8822A'); // Bright metallic bronze
-    ctx.fillStyle = lowerArmorGrd;
-    ctx.fillRect(2, s.h - 6, s.w - 4, 5);
-    
-    // Lower armor shadow line
-    ctx.fillStyle = '#1A0700';
-    ctx.fillRect(2, s.h - 2, s.w - 4, 1);
-    
-    // Tertiary mid-hull reinforcement strips
-    ctx.fillStyle = '#92400E';
-    ctx.fillRect(s.w * 0.1, s.h * 0.45, s.w * 0.8, 2);
-    ctx.fillStyle = `rgba(161, 98, 7, ${timeShimmer})`;
-    ctx.fillRect(s.w * 0.1, s.h * 0.45, s.w * 0.8, 1);
-    
-    // === RAZOR-SHARP MULTI-SEGMENT NOSE CONE ===
-    
-    // Nose cone ultra-deep shadow
-    ctx.fillStyle = '#1A0700';
-    ctx.beginPath();
-    ctx.moveTo(s.w + 2, s.h / 2 + 2);
-    ctx.lineTo(s.w + 12, s.h / 2 - 3);
-    ctx.lineTo(s.w + 16, s.h / 2 - 1);
-    ctx.lineTo(s.w + 16, s.h / 2 + 3);
-    ctx.lineTo(s.w + 12, s.h / 2 + 5);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Multi-layered nose cone construction
-    ctx.fillStyle = '#451A03';
-    ctx.beginPath();
-    ctx.moveTo(s.w + 1, s.h / 2 + 1);
-    ctx.lineTo(s.w + 11, s.h / 2 - 4);
-    ctx.lineTo(s.w + 15, s.h / 2 - 2);
-    ctx.lineTo(s.w + 15, s.h / 2 + 4);
-    ctx.lineTo(s.w + 11, s.h / 2 + 6);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Primary nose cone with ultra-complex gradient
-    const noseGrd = ctx.createRadialGradient(s.w + 8, s.h / 2, 0, s.w + 8, s.h / 2, 12);
-    noseGrd.addColorStop(0, `rgba(245, 158, 11, ${timeShimmer})`);
-    noseGrd.addColorStop(0.3, '#D97706');
-    noseGrd.addColorStop(0.6, '#B45309');
-    noseGrd.addColorStop(0.85, '#92400E');
-    noseGrd.addColorStop(1, '#7C2D12');
-    ctx.fillStyle = noseGrd;
+    // Nose cone
+    ctx.fillStyle = '#D97706';
     ctx.beginPath();
     ctx.moveTo(s.w, s.h / 2);
     ctx.lineTo(s.w + 10, s.h / 2 - 5);
@@ -1986,422 +1175,22 @@ function GameCanvas({
     ctx.closePath();
     ctx.fill();
     
-    // Segmented nose cone panels
-    ctx.strokeStyle = '#451A03';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    ctx.moveTo(s.w + 3, s.h / 2 - 3);
-    ctx.lineTo(s.w + 11, s.h / 2 - 1);
-    ctx.moveTo(s.w + 3, s.h / 2 + 3);
-    ctx.lineTo(s.w + 11, s.h / 2 + 1);
-    ctx.moveTo(s.w + 6, s.h / 2 - 4);
-    ctx.lineTo(s.w + 6, s.h / 2 + 4);
-    ctx.stroke();
-    
-    // Ultra-sharp metallic nose tip with multi-layer construction
-    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
-    ctx.beginPath();
-    ctx.moveTo(s.w + 10, s.h / 2 - 2);
-    ctx.lineTo(s.w + 14, s.h / 2 - 1);
-    ctx.lineTo(s.w + 14, s.h / 2 + 1);
-    ctx.lineTo(s.w + 10, s.h / 2 + 2);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Tip core highlighting
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.beginPath();
-    ctx.moveTo(s.w + 12, s.h / 2 - 0.5);
-    ctx.lineTo(s.w + 14, s.h / 2);
-    ctx.lineTo(s.w + 12, s.h / 2 + 0.5);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Nose cone premium edge highlights with shimmer
-    ctx.strokeStyle = `rgba(254, 243, 199, ${timeShimmer})`;
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(s.w + 10, s.h / 2 - 5);
-    ctx.lineTo(s.w + 14, s.h / 2 - 3);
-    ctx.moveTo(s.w + 10, s.h / 2 + 5);
-    ctx.lineTo(s.w + 14, s.h / 2 + 3);
-    ctx.stroke();
-    
-    // === ULTRA-PREMIUM CANOPY WITH CRYSTAL-CLEAR REFLECTIONS ===
-    
-    // Canopy structural frame with depth
-    ctx.fillStyle = '#451A03';
-    ctx.fillRect(s.w * 0.34, 1, 16, s.h - 2);
-    ctx.fillStyle = '#7C2D12';
-    ctx.fillRect(s.w * 0.35, 2, 14, s.h - 4);
-    
-    // Main canopy with ultra-complex multi-directional gradient
-    const canopyGrd = ctx.createRadialGradient(s.w * 0.42, s.h * 0.3, 0, s.w * 0.42, s.h * 0.7, 10);
-    canopyGrd.addColorStop(0, `rgba(254, 243, 199, ${timeShimmer})`);    // Ultra-bright reflection
-    canopyGrd.addColorStop(0.15, '#F3E9D2');  // Light cream
-    canopyGrd.addColorStop(0.35, '#E6D5B0');  // Medium cream
-    canopyGrd.addColorStop(0.6, '#D4C5A2');   // Darker cream
-    canopyGrd.addColorStop(0.85, '#C8B68A');  // Base color
-    canopyGrd.addColorStop(1, '#B89D6C');     // Deep base
-    ctx.fillStyle = canopyGrd;
+    // Canopy
+    ctx.fillStyle = '#E6D5B0';
     ctx.fillRect(s.w * 0.36, 3, 12, s.h - 6);
     
-    // Ultra-realistic canopy reflection streaks with time variation
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.95 * timeShimmer})`;
-    ctx.fillRect(s.w * 0.37, 4, 3, s.h - 8);
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.7 * timeShimmer})`;
-    ctx.fillRect(s.w * 0.41, 4, 2, s.h - 8);
-    ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * timeShimmer})`;
-    ctx.fillRect(s.w * 0.44, 5, 1, s.h - 10);
-    ctx.fillRect(s.w * 0.46, 6, 1, s.h - 12);
-    
-    // Canopy environmental reflections (simulated sky/ground)
-    ctx.fillStyle = 'rgba(183, 157, 108, 0.3)';
-    ctx.fillRect(s.w * 0.37, s.h * 0.6, 10, 2);
-    ctx.fillStyle = 'rgba(247, 242, 230, 0.4)';
-    ctx.fillRect(s.w * 0.37, s.h * 0.25, 10, 3);
-    
-    // Canopy frame ultra-details with beveled edges
-    ctx.strokeStyle = '#291107';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(s.w * 0.36, 3, 12, s.h - 6);
-    ctx.strokeStyle = `rgba(161, 98, 7, ${timeShimmer})`;
-    ctx.lineWidth = 0.5;
-    ctx.strokeRect(s.w * 0.365, 3.5, 11, s.h - 7);
-    
-    // === HYPER-DETAILED WING ASSEMBLIES WITH GEOMETRIC COMPLEXITY ===
-    
-    // Upper wing comprehensive assembly
-    ctx.fillStyle = '#291107'; // Ultra-deep wing shadow
-    ctx.fillRect(s.w * 0.54, -1, 16, 6);
-    ctx.fillStyle = '#451A03'; // Deep wing shadow
-    ctx.fillRect(s.w * 0.55, 0, 15, 5);
-    ctx.fillStyle = '#7C2D12'; // Wing base shadow
-    ctx.fillRect(s.w * 0.56, 0, 14, 4);
-    
-    // Wing gradient construction
-    const wingGrd = ctx.createLinearGradient(s.w * 0.56, 0, s.w * 0.7, 3);
-    wingGrd.addColorStop(0, '#92400E');
-    wingGrd.addColorStop(0.4, '#B45309');
-    wingGrd.addColorStop(0.8, `rgba(217, 119, 6, ${timeShimmer})`);
-    wingGrd.addColorStop(1, '#F59E0B');
-    ctx.fillStyle = wingGrd;
+    // Wings
+    ctx.fillStyle = '#B45309';
     ctx.fillRect(s.w * 0.57, 0, 12, 3);
-    
-    // Ultra-detailed weapon hardpoints with geometric precision
-    ctx.fillStyle = '#451A03'; // Hardpoint shadows
-    ctx.fillRect(s.w * 0.585, -0.5, 2.5, 3);
-    ctx.fillRect(s.w * 0.62, -0.5, 2.5, 3);
-    ctx.fillRect(s.w * 0.655, -0.5, 2.5, 3);
-    
-    ctx.fillStyle = '#B45309'; // Primary hardpoints
-    ctx.fillRect(s.w * 0.59, 0, 2, 2);
-    ctx.fillRect(s.w * 0.625, 0, 2, 2);
-    ctx.fillRect(s.w * 0.66, 0, 2, 2);
-    
-    // Hardpoint metallic highlights
-    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
-    ctx.fillRect(s.w * 0.59, 0, 2, 0.5);
-    ctx.fillRect(s.w * 0.625, 0, 2, 0.5);
-    ctx.fillRect(s.w * 0.66, 0, 2, 0.5);
-    
-    // Wing edge ultra-highlight with shimmer
-    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
-    ctx.fillRect(s.w * 0.57, 0, 12, 1);
-    ctx.fillStyle = 'rgba(254, 243, 199, 0.8)';
-    ctx.fillRect(s.w * 0.57, 0, 12, 0.5);
-    
-    // Lower wing assembly (mirrored with enhanced detail)
-    ctx.fillStyle = '#291107';
-    ctx.fillRect(s.w * 0.54, s.h - 5, 16, 6);
-    ctx.fillStyle = '#451A03';
-    ctx.fillRect(s.w * 0.55, s.h - 4, 15, 5);
-    ctx.fillStyle = '#7C2D12';
-    ctx.fillRect(s.w * 0.56, s.h - 3, 14, 4);
-    
-    const lowerWingGrd = ctx.createLinearGradient(s.w * 0.56, s.h - 3, s.w * 0.7, s.h);
-    lowerWingGrd.addColorStop(0, '#F59E0B');
-    lowerWingGrd.addColorStop(0.2, `rgba(217, 119, 6, ${timeShimmer})`);
-    lowerWingGrd.addColorStop(0.6, '#B45309');
-    lowerWingGrd.addColorStop(1, '#92400E');
-    ctx.fillStyle = lowerWingGrd;
     ctx.fillRect(s.w * 0.57, s.h - 3, 12, 3);
     
-    // Lower hardpoints
-    ctx.fillStyle = '#451A03';
-    ctx.fillRect(s.w * 0.585, s.h - 2.5, 2.5, 3);
-    ctx.fillRect(s.w * 0.62, s.h - 2.5, 2.5, 3);
-    ctx.fillRect(s.w * 0.655, s.h - 2.5, 2.5, 3);
-    
-    ctx.fillStyle = '#B45309';
-    ctx.fillRect(s.w * 0.59, s.h - 2, 2, 2);
-    ctx.fillRect(s.w * 0.625, s.h - 2, 2, 2);
-    ctx.fillRect(s.w * 0.66, s.h - 2, 2, 2);
-    
-    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
-    ctx.fillRect(s.w * 0.59, s.h - 1.5, 2, 0.5);
-    ctx.fillRect(s.w * 0.625, s.h - 1.5, 2, 0.5);
-    ctx.fillRect(s.w * 0.66, s.h - 1.5, 2, 0.5);
-    
-    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
-    ctx.fillRect(s.w * 0.57, s.h - 1, 12, 1);
-    ctx.fillStyle = 'rgba(254, 243, 199, 0.8)';
-    ctx.fillRect(s.w * 0.57, s.h - 0.5, 12, 0.5);
-    
-    // === HYPER-ADVANCED LIGHTING AND SENSOR SYSTEMS ===
-    
-    // Navigation lights with complex flashing patterns
-    const wingFlash = 0.3 + 0.7 * Math.sin(s.wingFlicker * 1.5);
-    const altFlash = 0.3 + 0.7 * Math.sin(s.wingFlicker * 1.2 + Math.PI);
-    const rapidFlash = 0.2 + 0.8 * Math.sin(s.wingFlicker * 3);
-    
-    // Primary wing navigation lights with halos
-    ctx.globalAlpha = wingFlash;
-    ctx.fillStyle = '#DC2626';
-    ctx.fillRect(s.w * 0.675, -0.5, 4, 2);
-    ctx.globalAlpha = wingFlash * 0.4;
-    ctx.fillRect(s.w * 0.67, -1, 5, 3);
-    ctx.globalAlpha = wingFlash;
-    ctx.fillStyle = '#059669';
-    ctx.fillRect(s.w * 0.675, s.h - 1.5, 4, 2);
-    ctx.globalAlpha = wingFlash * 0.4;
-    ctx.fillRect(s.w * 0.67, s.h - 2, 5, 3);
-    ctx.globalAlpha = 1;
-    
-    // Secondary strobe systems
-    ctx.globalAlpha = altFlash;
-    ctx.fillStyle = '#F59E0B';
-    ctx.fillRect(s.w * 0.72, 0.5, 2, 1);
-    ctx.fillRect(s.w * 0.72, s.h - 1.5, 2, 1);
-    ctx.globalAlpha = 1;
-    
-    // Rapid pulse beacons
-    ctx.globalAlpha = rapidFlash;
-    ctx.fillStyle = '#FEF3C7';
-    ctx.fillRect(s.w * 0.74, 1, 1, 0.5);
-    ctx.fillRect(s.w * 0.74, s.h - 1.5, 1, 0.5);
-    ctx.globalAlpha = 1;
-    
-    // Advanced communication antenna with multi-segment construction
-    ctx.strokeStyle = '#A16207';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(s.w * 0.3, s.h * 0.2);
-    ctx.lineTo(s.w * 0.275, s.h * 0.05);
-    ctx.lineTo(s.w * 0.32, s.h * 0.08);
-    ctx.lineTo(s.w * 0.285, s.h * 0.02);
-    ctx.stroke();
-    
-    // Antenna segmentation details
-    ctx.strokeStyle = '#451A03';
-    ctx.lineWidth = 0.5;
-    ctx.beginPath();
-    for (let i = 0; i < 4; i++) {
-      const y = s.h * (0.05 + i * 0.035);
-      ctx.moveTo(s.w * 0.27, y);
-      ctx.lineTo(s.w * 0.29, y);
-    }
-    ctx.stroke();
-    
-    // Multi-frequency antenna tip array
-    ctx.fillStyle = `rgba(220, 38, 38, ${rapidFlash})`;
-    ctx.fillRect(s.w * 0.275, s.h * 0.02, 1.5, 1);
-    ctx.fillStyle = `rgba(245, 158, 11, ${altFlash})`;
-    ctx.fillRect(s.w * 0.285, s.h * 0.025, 1, 0.5);
-    
-    // === ULTRA-SOPHISTICATED ENGINE AND EXHAUST SYSTEMS ===
-    
-    // Enhanced engine vents with complex internal structure
-    ctx.fillStyle = '#0A0300'; // Ultra-deep vent shadow
-    ctx.fillRect(-3, s.h * 0.24, 6, s.h * 0.22);
-    ctx.fillRect(-3, s.h * 0.54, 6, s.h * 0.22);
-    
-    ctx.fillStyle = '#1C0A00'; // Deep vent shadow
-    ctx.fillRect(-2, s.h * 0.25, 4, s.h * 0.2);
-    ctx.fillRect(-2, s.h * 0.55, 4, s.h * 0.2);
-    
-    ctx.fillStyle = '#451A03'; // Vent interior
-    ctx.fillRect(-1, s.h * 0.27, 2, s.h * 0.16);
-    ctx.fillRect(-1, s.h * 0.57, 2, s.h * 0.16);
-    
-    // Complex vent grille system with heat distortion simulation
-    ctx.strokeStyle = `rgba(124, 45, 18, ${timeShimmer})`;
-    ctx.lineWidth = 0.7;
-    for (let i = 0; i < 5; i++) {
-      const y1 = s.h * 0.28 + i * 1.8 + Math.sin(performance.now() * 0.005 + i) * 0.3;
-      const y2 = s.h * 0.58 + i * 1.8 + Math.sin(performance.now() * 0.005 + i) * 0.3;
-      ctx.beginPath();
-      ctx.moveTo(-1.5, y1);
-      ctx.lineTo(1.5, y1);
-      ctx.moveTo(-1.5, y2);
-      ctx.lineTo(1.5, y2);
-      ctx.stroke();
-    }
-    
-    // Engine vent heat glow effect
-    if (s.engineHeat > 0.3) {
-      ctx.globalAlpha = s.engineHeat * 0.6;
-      ctx.fillStyle = '#F59E0B';
-      ctx.fillRect(-1, s.h * 0.27, 2, s.h * 0.16);
-      ctx.fillRect(-1, s.h * 0.57, 2, s.h * 0.16);
-      ctx.globalAlpha = 1;
-    }
-    
-    // === PREMIUM HULL IDENTIFICATION AND SOPHISTICATED DETAILING ===
-    
-    // Enhanced hull identification with multiple text elements
-    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
-    ctx.font = '6px monospace';
-    ctx.fillText('HD-7', 3, s.h * 0.38);
-    ctx.font = '4px monospace';
-    ctx.fillText('MK-II', 3, s.h * 0.45);
-    ctx.fillText('2387', 3, s.h * 0.52);
-    
-    // Ultra-sophisticated hull paneling with geometric precision
-    ctx.strokeStyle = 'rgba(69, 26, 3, 0.7)';
-    ctx.lineWidth = 0.6;
-    ctx.beginPath();
-    // Complex diagonal support strut system
-    ctx.moveTo(s.w * 0.12, 3);
-    ctx.lineTo(s.w * 0.28, s.h - 5);
-    ctx.moveTo(s.w * 0.18, 3);
-    ctx.lineTo(s.w * 0.22, s.h - 5);
-    ctx.moveTo(s.w * 0.72, 3);
-    ctx.lineTo(s.w * 0.88, s.h - 5);
-    ctx.moveTo(s.w * 0.78, 3);
-    ctx.lineTo(s.w * 0.82, s.h - 5);
-    // Cross-bracing elements
-    ctx.moveTo(s.w * 0.15, s.h * 0.6);
-    ctx.lineTo(s.w * 0.25, s.h * 0.4);
-    ctx.moveTo(s.w * 0.75, s.h * 0.6);
-    ctx.lineTo(s.w * 0.85, s.h * 0.4);
-    ctx.stroke();
-    
-    // === ULTRA-PREMIUM HERITAGE STRIPE SYSTEM ===
-    
-    // Multi-layered heritage stripe with complex gradient and shimmer
-    const stripeGrd = ctx.createLinearGradient(3, s.h - 8, s.w - 6, s.h - 1);
-    stripeGrd.addColorStop(0, '#C8822A');
-    stripeGrd.addColorStop(0.15, '#D97706');
-    stripeGrd.addColorStop(0.35, `rgba(245, 158, 11, ${timeShimmer})`);
-    stripeGrd.addColorStop(0.65, '#F59E0B');
-    stripeGrd.addColorStop(0.85, '#D97706');
-    stripeGrd.addColorStop(1, '#A16207');
-    ctx.fillStyle = stripeGrd;
-    ctx.fillRect(3, s.h - 8, s.w - 6, 6);
-    
-    // Primary stripe ultra-highlight with dynamic intensity
-    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
-    ctx.fillRect(4, s.h - 7, s.w - 8, 1.5);
-    
-    // Stripe geometric pattern overlay
-    ctx.fillStyle = 'rgba(69, 26, 3, 0.3)';
-    for (let i = 6; i < s.w - 6; i += 8) {
-      ctx.fillRect(i, s.h - 6, 2, 2);
-    }
-    
-    // Secondary stripe shadow with depth
-    ctx.fillStyle = '#7C2D12';
-    ctx.fillRect(4, s.h - 3, s.w - 8, 1);
-    ctx.fillStyle = '#451A03';
-    ctx.fillRect(4, s.h - 2, s.w - 8, 1);
-    
-    // Multiple accent stripe system
-    ctx.fillStyle = `rgba(161, 98, 7, ${timeShimmer})`;
-    ctx.fillRect(5, 4, s.w - 10, 1.5);
-    ctx.fillRect(5, s.h - 10, s.w - 10, 1.5);
-    
-    // Micro accent details
-    ctx.fillStyle = 'rgba(254, 243, 199, 0.6)';
-    ctx.fillRect(6, 4.5, s.w - 12, 0.5);
-    ctx.fillRect(6, s.h - 9.5, s.w - 12, 0.5);
-    
-    // === ADVANCED WEAPON SYSTEM INDICATORS ===
-    
-    // Weapon hardpoint ultra-detailed indicators
-    ctx.fillStyle = '#291107'; // Deep hardpoint shadow
-    ctx.fillRect(s.w * 0.84, s.h * 0.28, 5, 4);
-    ctx.fillRect(s.w * 0.84, s.h * 0.68, 5, 4);
-    
-    ctx.fillStyle = '#7C2D12'; // Primary hardpoint
-    ctx.fillRect(s.w * 0.85, s.h * 0.29, 3, 3);
-    ctx.fillRect(s.w * 0.85, s.h * 0.69, 3, 3);
-    
-    // Hardpoint detailed construction
-    ctx.fillStyle = '#B45309';
-    ctx.fillRect(s.w * 0.855, s.h * 0.295, 2, 2);
-    ctx.fillRect(s.w * 0.855, s.h * 0.695, 2, 2);
-    
-    // Multi-status weapon system lights with complex patterns
-    const weaponFlash = 0.4 + 0.6 * Math.sin(s.wingFlicker * 2.1);
-    ctx.globalAlpha = weaponFlash;
-    ctx.fillStyle = isMoving ? '#059669' : '#DC2626'; // Green when active, red when inactive
-    ctx.fillRect(s.w * 0.86, s.h * 0.3, 1.5, 1);
-    ctx.fillRect(s.w * 0.86, s.h * 0.7, 1.5, 1);
-    ctx.globalAlpha = 1;
-    
-    // Secondary weapon status indicators
-    ctx.globalAlpha = altFlash * 0.8;
-    ctx.fillStyle = '#F59E0B';
-    ctx.fillRect(s.w * 0.862, s.h * 0.305, 0.5, 0.5);
-    ctx.fillRect(s.w * 0.862, s.h * 0.705, 0.5, 0.5);
-    ctx.globalAlpha = 1;
-    
     ctx.restore();
-  }
-  
-  function drawThrusterFlames(ctx, s) {
-    // Animated thruster flames with Heritage Brown theme
-    const flameIntensity = s.engineHeat;
-    const flameFlicker = 0.7 + 0.3 * Math.sin(s.thrusterTime);
-    
-    // Main thruster flame
-    const flameLength = 12 + flameIntensity * 8;
-    const flameGrd = ctx.createLinearGradient(-flameLength, s.h * 0.5, 0, s.h * 0.5);
-    flameGrd.addColorStop(0, 'rgba(254, 243, 199, 0)'); // transparent cream
-    flameGrd.addColorStop(0.3, 'rgba(245, 158, 11, 0.8)'); // Heritage orange
-    flameGrd.addColorStop(0.7, 'rgba(180, 83, 9, 0.9)'); // Heritage brown
-    flameGrd.addColorStop(1, 'rgba(146, 64, 14, 1)'); // Heritage primary
-    
-    ctx.globalAlpha = flameIntensity * flameFlicker;
-    ctx.fillStyle = flameGrd;
-    
-    // Primary thruster flame shape
-    ctx.beginPath();
-    ctx.moveTo(0, s.h * 0.35);
-    ctx.quadraticCurveTo(-flameLength * 0.6, s.h * 0.3, -flameLength, s.h * 0.5);
-    ctx.quadraticCurveTo(-flameLength * 0.6, s.h * 0.7, 0, s.h * 0.65);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Secondary thruster flames for more detail
-    ctx.globalAlpha = flameIntensity * flameFlicker * 0.7;
-    ctx.fillStyle = '#FEF3C7';
-    
-    // Upper mini flame
-    ctx.beginPath();
-    ctx.moveTo(-1, s.h * 0.37);
-    ctx.quadraticCurveTo(-flameLength * 0.4, s.h * 0.35, -flameLength * 0.6, s.h * 0.45);
-    ctx.quadraticCurveTo(-flameLength * 0.3, s.h * 0.4, -1, s.h * 0.42);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Lower mini flame
-    ctx.beginPath();
-    ctx.moveTo(-1, s.h * 0.58);
-    ctx.quadraticCurveTo(-flameLength * 0.4, s.h * 0.6, -flameLength * 0.6, s.h * 0.55);
-    ctx.quadraticCurveTo(-flameLength * 0.3, s.h * 0.57, -1, s.h * 0.63);
-    ctx.closePath();
-    ctx.fill();
-    
-    ctx.globalAlpha = 1;
   }
   
   function drawRocket(ctx, r) {
     ctx.save();
     ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
     
-    // Add subtle wobble during flight
     if (r.launched) {
       const wobbleAmount = Math.sin(r.wobble) * 0.5;
       ctx.rotate(wobbleAmount * 0.1);
@@ -2410,32 +1199,28 @@ function GameCanvas({
     const halfW = r.w / 2;
     const halfH = r.h / 2;
     
-    // Rocket body gradient
     const bodyGrd = ctx.createLinearGradient(-halfW, -halfH, halfW, halfH);
     if (r.active) {
-      bodyGrd.addColorStop(0, '#92400E'); // Heritage primary
-      bodyGrd.addColorStop(0.5, '#B45309'); // Heritage secondary
-      bodyGrd.addColorStop(1, '#7C2D12'); // Heritage dark
+      bodyGrd.addColorStop(0, '#92400E');
+      bodyGrd.addColorStop(0.5, '#B45309');
+      bodyGrd.addColorStop(1, '#7C2D12');
     } else {
-      bodyGrd.addColorStop(0, '#B45309'); // Inactive coloring
+      bodyGrd.addColorStop(0, '#B45309');
       bodyGrd.addColorStop(1, '#92400E');
     }
     
-    // Main rocket body
     ctx.fillStyle = bodyGrd;
     ctx.fillRect(-halfW, -halfH, r.w, r.h);
     
-    // Rocket fins
+    // Fins
     ctx.fillStyle = '#7C2D12';
     ctx.beginPath();
-    // Left fin
     ctx.moveTo(-halfW, halfH - 3);
     ctx.lineTo(-halfW - 3, halfH + 2);
     ctx.lineTo(-halfW, halfH);
     ctx.closePath();
     ctx.fill();
     
-    // Right fin
     ctx.beginPath();
     ctx.moveTo(halfW, halfH - 3);
     ctx.lineTo(halfW + 3, halfH + 2);
@@ -2443,7 +1228,7 @@ function GameCanvas({
     ctx.closePath();
     ctx.fill();
     
-    // Rocket nose cone
+    // Nose cone
     ctx.fillStyle = r.active ? '#D97706' : '#B45309';
     ctx.beginPath();
     ctx.moveTo(-halfW + 1, -halfH);
@@ -2452,17 +1237,12 @@ function GameCanvas({
     ctx.closePath();
     ctx.fill();
     
-    // Rocket stripe details
+    // Stripes
     ctx.fillStyle = '#FEF3C7';
     ctx.fillRect(-halfW + 1, -halfH + 2, r.w - 2, 1);
     ctx.fillRect(-halfW + 1, halfH - 3, r.w - 2, 1);
     
-    // Exhaust flames for launched rockets
-    if (r.launched && r.active) {
-      drawRocketExhaust(ctx, r, halfW, halfH);
-    }
-    
-    // Warning light for active rockets
+    // Warning light
     if (r.active) {
       const lightFlash = 0.5 + 0.5 * Math.sin(r.exhaustTime * 2);
       ctx.globalAlpha = lightFlash;
@@ -2472,53 +1252,6 @@ function GameCanvas({
     }
     
     ctx.restore();
-  }
-  
-  function drawRocketExhaust(ctx, r, halfW, halfH) {
-    // Animated exhaust flames
-    const exhaustFlicker = 0.6 + 0.4 * Math.sin(r.exhaustTime) * r.exhaustIntensity;
-    const exhaustLength = 8 + exhaustFlicker * 6;
-    
-    // Create exhaust gradient
-    const exhaustGrd = ctx.createLinearGradient(0, halfH, 0, halfH + exhaustLength);
-    exhaustGrd.addColorStop(0, 'rgba(245, 158, 11, 1)'); // Heritage orange
-    exhaustGrd.addColorStop(0.4, 'rgba(254, 243, 199, 0.9)'); // Heritage cream
-    exhaustGrd.addColorStop(0.8, 'rgba(217, 119, 6, 0.6)'); // Heritage amber
-    exhaustGrd.addColorStop(1, 'rgba(245, 158, 11, 0)'); // Transparent
-    
-    ctx.globalAlpha = exhaustFlicker;
-    ctx.fillStyle = exhaustGrd;
-    
-    // Main exhaust flame
-    ctx.beginPath();
-    ctx.moveTo(-halfW + 2, halfH);
-    ctx.quadraticCurveTo(-2, halfH + exhaustLength * 0.6, 0, halfH + exhaustLength);
-    ctx.quadraticCurveTo(2, halfH + exhaustLength * 0.6, halfW - 2, halfH);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Secondary exhaust flickers
-    ctx.globalAlpha = exhaustFlicker * 0.7;
-    ctx.fillStyle = '#FEF3C7';
-    
-    const sideFlameLength = exhaustLength * 0.4;
-    // Left side flame
-    ctx.beginPath();
-    ctx.moveTo(-halfW + 1, halfH);
-    ctx.quadraticCurveTo(-3, halfH + sideFlameLength * 0.7, -1, halfH + sideFlameLength);
-    ctx.quadraticCurveTo(-2, halfH + sideFlameLength * 0.5, -halfW + 2, halfH);
-    ctx.closePath();
-    ctx.fill();
-    
-    // Right side flame
-    ctx.beginPath();
-    ctx.moveTo(halfW - 1, halfH);
-    ctx.quadraticCurveTo(3, halfH + sideFlameLength * 0.7, 1, halfH + sideFlameLength);
-    ctx.quadraticCurveTo(2, halfH + sideFlameLength * 0.5, halfW - 2, halfH);
-    ctx.closePath();
-    ctx.fill();
-    
-    ctx.globalAlpha = 1;
   }
 
   useEffect(() => {
