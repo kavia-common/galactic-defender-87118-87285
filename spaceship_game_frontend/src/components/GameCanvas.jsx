@@ -54,6 +54,18 @@ function GameCanvas({
     hillsOffset: 0,
     mountains: [],
     mountainsOffset: 0,
+    // entities
+    ship: { 
+      x: 120, y: 360, w: 38, h: 22, vx: 0, vy: 0, speed: 280, damageFlash: 0,
+      thrusterTime: 0, // for animated thruster flames
+      engineHeat: 0, // engine heat effect
+      wingFlicker: 0 // wing light flicker
+    },
+=======
+  }
+
+  function drawMountains(ctx) {,
+=======
     clouds: [],
 
     // entities
@@ -63,6 +75,18 @@ function GameCanvas({
       engineHeat: 0, // engine heat effect
       wingFlicker: 0 // wing light flicker
     },
+=======
+    // entities
+    ship: { 
+      x: 120, y: 360, w: 38, h: 22, vx: 0, vy: 0, speed: 280, damageFlash: 0,
+      thrusterTime: 0, // for animated thruster flames
+      engineHeat: 0, // engine heat effect
+      wingFlicker: 0 // wing light flicker
+    },
+=======
+  }
+
+  function drawMountains(ctx) {,
     bullets: [],
     bombs: [],
     rockets: [],
@@ -219,25 +243,111 @@ function GameCanvas({
   function seedClouds() {
     const st = stateRef.current;
     const clouds = [];
-    const count = Math.max(6, Math.floor(st.width / 180));
+    const count = Math.max(8, Math.floor(st.width / 160)); // Slightly more clouds for depth
     for (let i = 0; i < count; i++) {
-      const scale = 0.6 + Math.random() * 1.1;
-      const y = st.height * (0.1 + Math.random() * 0.25);
-      const x = Math.random() * (st.width + 800) - 400;
-      clouds.push(makeCloud(x, y, scale));
+      const scale = 0.4 + Math.random() * 1.4; // Wider scale range for variety
+      const y = st.height * (0.08 + Math.random() * 0.3); // Slightly higher positioning
+      const x = Math.random() * (st.width + 1000) - 500;
+      clouds.push(makeCloud(x, y, scale, i));
     }
     st.clouds = clouds;
   }
 
-  function makeCloud(x, y, scale) {
+  function makeCloud(x, y, scale, index) {
+    // Create different cloud types for visual variety
+    const cloudType = Math.floor(Math.random() * 4); // 4 different cloud shapes
+    const depthLayer = Math.random(); // 0 = front, 1 = back for layered movement
+    
     return {
-      x, y, scale,
-      // Individual cloud drift - very subtle movement independent of parallax
-      // Smaller clouds move slightly faster to enhance depth perception
-      vx: - (4 + Math.random() * 8) * (0.8 + (1 - scale) * 0.4),
-      opacity: 0.65 + Math.random() * 0.2,
+      x, y, scale, cloudType, depthLayer, index,
+      
+      // Enhanced parallax movement with variable speeds for depth
+      // Farther clouds move slower, creating sophisticated parallax effect
+      vx: -(3 + Math.random() * 10) * (0.6 + depthLayer * 0.7), // Variable speed based on depth
+      
+      // Sophisticated opacity variation with subtle depth-based transparency
+      opacity: (0.4 + Math.random() * 0.4) * (0.7 + depthLayer * 0.3),
+      baseOpacity: 0.4 + Math.random() * 0.4, // Store base for morphing effects
+      
+      // Morphing and animation properties
+      morphPhase: Math.random() * Math.PI * 2, // For shape morphing
+      morphSpeed: 0.2 + Math.random() * 0.4, // Individual morphing speeds
+      morphIntensity: 0.1 + Math.random() * 0.15, // How much the cloud morphs
+      
+      // Drift animation for organic movement
+      driftPhase: Math.random() * Math.PI * 2,
+      driftSpeed: 0.3 + Math.random() * 0.5,
+      driftAmplitude: 3 + Math.random() * 8, // Vertical drift amount
+      
+      // Layered opacity for sophisticated semi-transparency
+      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
+      layerOffsets: [], // Will be populated with layer offset data
+    };\n  }\n=======
+=======
+
+  function seedStars() {
+=======
+      // Soft edge properties for volume effect
+      softness: 0.6 + Math.random() * 0.4, // Edge softness factor
+      volumeIntensity: 0.5 + Math.random() * 0.5, // 3D volume effect strength
+      
+      // Layered opacity for sophisticated semi-transparency
+      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
+      layerOffsets: [], // Will be populated with layer offset data
     };
   }
+=======
+
+  function seedStars() {
+=======
+      // Layered opacity for sophisticated semi-transparency
+      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
+      layerOffsets: [], // Will be populated with layer offset data
+    };
+  }
+=======
+=======
+      // Color variation within Heritage Brown theme
+      colorVariant: Math.floor(Math.random() * 5), // 5 Heritage Brown cloud colors
+      
+      // Soft edge properties for volume effect
+      softness: 0.6 + Math.random() * 0.4, // Edge softness factor
+      volumeIntensity: 0.5 + Math.random() * 0.5, // 3D volume effect strength
+      
+      // Layered opacity for sophisticated semi-transparency
+      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
+      layerOffsets: [], // Will be populated with layer offset data
+    };
+  }
+=======
+      // Layered opacity for sophisticated semi-transparency
+      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
+      layerOffsets: [], // Will be populated with layer offset data
+    };\n  }\n=======
+=======
+
+  function seedStars() {
+=======
+      // Soft edge properties for volume effect
+      softness: 0.6 + Math.random() * 0.4, // Edge softness factor
+      volumeIntensity: 0.5 + Math.random() * 0.5, // 3D volume effect strength
+      
+      // Layered opacity for sophisticated semi-transparency
+      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
+      layerOffsets: [], // Will be populated with layer offset data
+    };
+  }
+=======
+
+  function seedStars() {
+=======
+      // Layered opacity for sophisticated semi-transparency
+      layerCount: 2 + Math.floor(Math.random() * 3), // 2-4 layers per cloud
+      layerOffsets: [], // Will be populated with layer offset data
+    };
+  }
+=======
+=======
 
   function seedStars() {
     const st = stateRef.current;
@@ -559,14 +669,62 @@ function GameCanvas({
       if (n.x < -wrapBuffer) n.x = st.width + wrapBuffer + Math.random() * 200;
     });
 
-    // Clouds drift across the sky with subtle independent movement
+    // Ultra-sophisticated cloud movement with morphing and layered parallax
     st.clouds.forEach(c => {
-      // Clouds have both individual movement and parallax scrolling
-      c.x += c.vx * dt;
-      // Wrap with scale-based buffer for different cloud sizes
-      const wrapBuffer = 300 * c.scale;
-      if (c.x < -wrapBuffer) c.x = st.width + wrapBuffer + Math.random() * 300;
+      // Enhanced parallax movement with variable speeds based on depth layer
+      const parallaxMultiplier = 0.5 + (1 - c.depthLayer) * 0.8; // Front clouds move faster
+      c.x += c.vx * dt * parallaxMultiplier;
+      
+      // Update morphing animation phases
+      c.morphPhase += c.morphSpeed * dt;
+      c.driftPhase += c.driftSpeed * dt;
+      
+      // Organic vertical drift animation
+      const driftOffset = Math.sin(c.driftPhase) * c.driftAmplitude * 0.5;
+      c.currentY = c.y + driftOffset;
+      
+      // Subtle opacity breathing effect for more life-like appearance
+      const opacityBreathing = 1 + Math.sin(c.morphPhase * 0.7) * 0.15;
+      c.currentOpacity = c.baseOpacity * opacityBreathing * (0.8 + c.depthLayer * 0.2);
+      
+      // Generate layer offsets for multi-layered cloud effect
+      if (!c.layerOffsets.length) {
+        for (let i = 0; i < c.layerCount; i++) {
+          c.layerOffsets.push({
+            x: (Math.random() - 0.5) * 15 * c.scale,
+            y: (Math.random() - 0.5) * 10 * c.scale,
+            scale: 0.7 + Math.random() * 0.6,
+            opacity: 0.3 + Math.random() * 0.4
+          });
+        }
+      }
+      
+      // Advanced wrapping with depth-aware buffers
+      const wrapBuffer = (250 + c.depthLayer * 100) * c.scale;
+      if (c.x < -wrapBuffer) {
+        c.x = st.width + wrapBuffer + Math.random() * 400;
+        // Regenerate properties for variety when cloud wraps
+        c.morphPhase = Math.random() * Math.PI * 2;
+        c.driftPhase = Math.random() * Math.PI * 2;
+      }
     });
+
+    // Ship control - independent of terrain parallax movement
+=======
+
+    // Ship control - independent of terrain parallax movement
+=======
+        c.layerOffsets = []; // Reset layer offsets for new positioning
+      }
+    });
+
+    // Ship control - independent of terrain parallax movement
+=======
+      }
+    });
+
+    // Ship control - independent of terrain parallax movement
+=======
 
     // Ship control - independent of terrain parallax movement
     const k = st.keys;
@@ -1008,11 +1166,51 @@ function GameCanvas({
   function drawClouds(ctx) {
     const st = stateRef.current;
     ctx.save();
-    st.clouds.forEach(c => {
-      drawCloudShape(ctx, c.x, c.y, c.scale, c.opacity);
-    });
+    
+    // Sort clouds by depth layer for proper layered rendering
+    const sortedClouds = [...st.clouds].sort((a, b) => b.depthLayer - a.depthLayer);
+    
+    sortedClouds.forEach(cloud => {
+      // Skip clouds outside visible area for performance
+      const cloudSize = (15 + cloud.scale * 8) * 3; // Estimated cloud size
+      if (cloud.x > -cloudSize && cloud.x < st.width + cloudSize) {
+
+  function drawStars(ctx) {
+=======
+    });\n    \n    ctx.restore();\n  }\n\n  function drawStars(ctx) {
+=======
     ctx.restore();
   }
+
+  function drawStars(ctx) {
+=======
+
+  function drawStars(ctx) {
+=======
+        drawAdvancedCloudShape(ctx, cloud);
+      }
+    });
+    
+    ctx.restore();
+  }
+
+  function drawStars(ctx) {
+=======
+
+  function drawStars(ctx) {
+=======
+    });
+    
+    ctx.restore();
+  }
+
+  function drawStars(ctx) {
+=======
+    ctx.restore();
+  }
+
+  function drawStars(ctx) {
+=======
 
   function drawStars(ctx) {
     const st = stateRef.current;
@@ -1088,21 +1286,223 @@ function GameCanvas({
     ctx.restore();
   }
 
-  function drawCloudShape(ctx, x, y, scale = 1, opacity = 0.75) {
+  function drawAdvancedCloudShape(ctx, cloud) {
+    const { x, currentY, scale, currentOpacity, cloudType, morphPhase, morphIntensity, 
+            colorVariant, softness, volumeIntensity, layerCount, layerOffsets, depthLayer } = cloud;
+    
     ctx.save();
-    ctx.globalAlpha = opacity;
-    ctx.fillStyle = '#FEF3C7'; // Heritage light cream
-    ctx.beginPath();
-    // simple puffy cloud using multiple arcs
-    const r = 18 * scale;
-    ctx.arc(x, y, r, Math.PI * 0.5, Math.PI * 1.5);
-    ctx.arc(x + r * 1.2, y - r * 0.8, r * 1.1, Math.PI, 0);
-    ctx.arc(x + r * 2.2, y, r * 0.9, Math.PI * 1.5, Math.PI * 0.5);
-    ctx.closePath();
-    ctx.fill();
+    
+    // Heritage Brown cloud color palette - 5 sophisticated variations
+    const heritageCloudColors = [
+      { base: '#F7F2E6', highlight: '#FFFBF0', shadow: '#E8DCC6' }, // Lightest cream
+      { base: '#F3E9D2', highlight: '#F9F0E3', shadow: '#E0D4B8' }, // Light heritage cream
+      { base: '#EFE2C7', highlight: '#F5EDDB', shadow: '#D9CEB0' }, // Medium heritage cream
+      { base: '#E8DCC6', highlight: '#F0E5D3', shadow: '#D2C2A6' }, // Deeper heritage cream
+      { base: '#E0D4B8', highlight: '#E8DCC6', shadow: '#C8B68A' }  // Darkest heritage cream
+    ];
+    
+    const cloudColors = heritageCloudColors[colorVariant % heritageCloudColors.length];
+    
+    // Calculate morphing effects for organic shape changes
+    const morphX = Math.sin(morphPhase) * morphIntensity * scale * 10;
+    const morphY = Math.cos(morphPhase * 1.3) * morphIntensity * scale * 6;
+    const morphScale = 1 + Math.sin(morphPhase * 0.8) * morphIntensity * 0.3;
+    
+    const baseRadius = (15 + scale * 8) * morphScale;
+    const cloudX = x + morphX;
+    const cloudY = currentY + morphY;
+    
+    // Draw multiple layered cloud elements for sophisticated semi-transparency
+    for (let layer = 0; layer < layerCount; layer++) {
+      const layerData = layerOffsets[layer] || { x: 0, y: 0, scale: 1, opacity: 0.5 };
+      const layerX = cloudX + layerData.x;
+      const layerY = cloudY + layerData.y;
+      const layerScale = layerData.scale;
+      const layerOpacity = currentOpacity * layerData.opacity * (0.4 + layer * 0.3);
+      
+      ctx.globalAlpha = layerOpacity;
+      
+      // Create sophisticated gradient fill with volume effect
+      const gradientSize = baseRadius * layerScale * 2.5;
+      const volumeGradient = ctx.createRadialGradient(
+        layerX - gradientSize * 0.2, layerY - gradientSize * 0.15, 0, // Offset center for volume
+        layerX, layerY, gradientSize
+      );
+      
+      // Multi-stop gradient for sophisticated volume and lighting
+      volumeGradient.addColorStop(0, cloudColors.highlight + 'E6'); // Bright center
+      volumeGradient.addColorStop(0.2, cloudColors.base + 'D9'); // Main cloud color
+      volumeGradient.addColorStop(0.5, cloudColors.base + 'B3'); // Mid transparency
+      volumeGradient.addColorStop(0.8, cloudColors.shadow + '80'); // Shadow edge
+      volumeGradient.addColorStop(1, cloudColors.shadow + '00'); // Transparent edge
+      
+      ctx.fillStyle = volumeGradient;
+      
+      // Draw sophisticated cloud shapes based on type with morphing
+      ctx.beginPath();
+      
+      if (cloudType === 0) {
+        // Cumulus-style puffy cloud
+        drawPuffyCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
+      } else if (cloudType === 1) {
+        // Stratus-style elongated cloud  
+        drawStratusCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
+      } else if (cloudType === 2) {
+        // Cirrus-style wispy cloud
+        drawCirrusCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
+      } else {
+        // Hybrid complex cloud
+        drawComplexCloudPath(ctx, layerX, layerY, baseRadius * layerScale, morphPhase, morphIntensity);
+      }
+      
+      ctx.fill();
+      
+      // Add subtle outline for volume definition (very soft)
+      if (layer === 0) { // Only on base layer to avoid overdoing it
+        ctx.globalAlpha = currentOpacity * 0.3;
+        ctx.strokeStyle = cloudColors.shadow + '60';
+        ctx.lineWidth = 1 + scale * 0.5;
+        ctx.stroke();
+      }
+    }
+    
+    // Add soft highlight streaks for extra volume and light interaction
+    ctx.globalAlpha = currentOpacity * volumeIntensity * 0.4;
+    ctx.fillStyle = cloudColors.highlight + 'A0';
+    
+    // Highlight streaks that follow cloud morphing
+    const streakLength = baseRadius * 1.5;
+    const streakWidth = 2 + scale * 1.5;
+    for (let i = 0; i < 2; i++) {
+      const streakAngle = morphPhase * 0.5 + i * Math.PI * 0.7;
+      const streakX = cloudX + Math.cos(streakAngle) * baseRadius * 0.3;
+      const streakY = cloudY + Math.sin(streakAngle) * baseRadius * 0.2;
+      
+      ctx.save();
+      ctx.translate(streakX, streakY);
+      ctx.rotate(streakAngle);
+      ctx.fillRect(-streakLength * 0.5, -streakWidth * 0.5, streakLength, streakWidth);
+      ctx.restore();
+    }
+    
     ctx.globalAlpha = 1;
     ctx.restore();
   }
+  
+  function drawPuffyCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
+    // Cumulus-style cloud with dynamic morphing
+    const segments = 8;
+    let started = false;
+    
+    for (let i = 0; i <= segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      const morphOffset = Math.sin(morphPhase + angle * 3) * morphIntensity * radius * 0.4;
+      const segmentRadius = radius * (0.8 + Math.sin(angle * 2 + morphPhase) * 0.3) + morphOffset;
+      const px = x + Math.cos(angle) * segmentRadius;
+      const py = y + Math.sin(angle) * segmentRadius * 0.7; // Slightly flattened
+      
+      if (!started) {
+        ctx.moveTo(px, py);
+        started = true;
+      } else {
+        ctx.lineTo(px, py);
+      }
+    }
+    ctx.closePath();
+  }
+  
+  function drawStratusCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
+    // Elongated horizontal cloud
+    const width = radius * 2.5;
+    const height = radius * 0.6;
+    const segments = 12;
+    
+    ctx.moveTo(x - width * 0.5, y);
+    
+    // Top curve with morphing
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const px = x + (t - 0.5) * width;
+      const morphY = Math.sin(morphPhase + t * Math.PI * 4) * morphIntensity * height * 0.5;
+      const py = y - height * 0.5 + morphY;
+      ctx.lineTo(px, py);
+    }
+    
+    // Bottom curve with morphing
+    for (let i = segments; i >= 0; i--) {
+      const t = i / segments;
+      const px = x + (t - 0.5) * width;
+      const morphY = Math.sin(morphPhase * 1.3 + t * Math.PI * 3) * morphIntensity * height * 0.3;
+      const py = y + height * 0.5 + morphY;
+      ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+  
+  function drawCirrusCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
+    // Wispy, streaky cloud
+    const segments = 15;
+    const wispiness = 0.6;
+    
+    ctx.moveTo(x - radius, y);
+    
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const angle = t * Math.PI * 4 + morphPhase;
+      const wisp = Math.sin(angle) * wispiness * radius;
+      const morphY = Math.sin(morphPhase * 2 + t * Math.PI * 6) * morphIntensity * radius * 0.4;
+      
+      const px = x + (t - 0.5) * radius * 2.8;
+      const py = y + wisp + morphY;
+      
+      if (i === 0) {
+        ctx.moveTo(px, py);
+      } else {
+        ctx.lineTo(px, py);
+      }
+    }
+    
+    // Return path for closed shape
+    for (let i = segments; i >= 0; i--) {
+      const t = i / segments;
+      const angle = t * Math.PI * 3 + morphPhase * 1.5;
+      const wisp = Math.sin(angle) * wispiness * radius * 0.5;
+      const morphY = Math.sin(morphPhase * 1.7 + t * Math.PI * 5) * morphIntensity * radius * 0.3;
+      
+      const px = x + (t - 0.5) * radius * 2.8;
+      const py = y + wisp + morphY + radius * 0.4;
+      ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+  }
+  
+  function drawComplexCloudPath(ctx, x, y, radius, morphPhase, morphIntensity) {
+    // Complex hybrid cloud with multiple bumps and organic shapes
+    const primaryBumps = 6;
+    const secondaryBumps = 12;
+    
+    ctx.moveTo(x + radius, y);
+    
+    // Primary shape with large organic bumps
+    for (let i = 0; i <= primaryBumps; i++) {
+      const angle = (i / primaryBumps) * Math.PI * 2;
+      const bumpMorph = Math.sin(morphPhase + angle * 2) * morphIntensity;
+      const bumpRadius = radius * (0.7 + Math.sin(angle * 1.5 + morphPhase * 0.8) * 0.4 + bumpMorph);
+      
+      // Add secondary detail bumps
+      for (let j = 0; j < 2; j++) {
+        const subAngle = angle + (j / 2) * (Math.PI * 2 / primaryBumps);
+        const subMorph = Math.sin(morphPhase * 1.5 + subAngle * 4) * morphIntensity * 0.5;
+        const subRadius = bumpRadius * (0.9 + subMorph);
+        
+        const px = x + Math.cos(subAngle) * subRadius;
+        const py = y + Math.sin(subAngle) * subRadius * 0.8;
+        ctx.lineTo(px, py);
+      }
+    }
+    ctx.closePath();
+  }
+=======
 
   function drawMountains(ctx) {
     const st = stateRef.current;
