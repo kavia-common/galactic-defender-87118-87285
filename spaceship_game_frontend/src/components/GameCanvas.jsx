@@ -232,8 +232,9 @@ function GameCanvas({
   function makeCloud(x, y, scale) {
     return {
       x, y, scale,
-      // subtle variance in speed; very slow to emphasize depth
-      vx: - (8 + Math.random() * 12) * (0.7 + scale * 0.3),
+      // Individual cloud drift - very subtle movement independent of parallax
+      // Smaller clouds move slightly faster to enhance depth perception
+      vx: - (4 + Math.random() * 8) * (0.8 + (1 - scale) * 0.4),
       opacity: 0.65 + Math.random() * 0.2,
     };
   }
@@ -507,59 +508,74 @@ function GameCanvas({
     ctx.save();
     ctx.translate(st.camera.shakeX, st.camera.shakeY);
 
-    // Base world scroll speed scales with level
-    const scroll = 120 + level * 6;
+    // Base world scroll speed - constant smooth movement independent of player
+    // Slightly increases with level for gameplay progression
+    const baseScrollSpeed = 100; // Base constant speed
+    const levelScrollBonus = level * 3; // Gradual increase with level
+    const totalScrollSpeed = baseScrollSpeed + levelScrollBonus;
 
-    // Update parallax offsets (slower for distant layers)
-    st.starsOffset += (scroll * 0.05) * dt;     // slowest - deep space
-    st.nebulaeOffset += (scroll * 0.08) * dt;   // very slow - deep space
-    st.mountainsOffset += (scroll * 0.25) * dt;
-    st.hillsOffset += (scroll * 0.55) * dt;
-    st.terrainOffset += (scroll * 1.0) * dt;
+    // Update parallax offsets with different speeds for depth illusion
+    // All layers move continuously to the left at their respective speeds
+    const starScrollSpeed = totalScrollSpeed * 0.08;      // slowest - deep space
+    const nebulaeScrollSpeed = totalScrollSpeed * 0.12;   // very slow - deep space  
+    const cloudScrollSpeed = totalScrollSpeed * 0.18;     // slow - sky layer
+    const mountainScrollSpeed = totalScrollSpeed * 0.35;  // medium-slow - distant terrain
+    const hillScrollSpeed = totalScrollSpeed * 0.65;      // medium - mid terrain
+    const terrainScrollSpeed = totalScrollSpeed * 1.0;    // fastest - foreground terrain
 
-    // Bound offsets to avoid large numbers (wrapping)
-    const wrap = (offset, step) => {
-      if (offset > step) {
-        const shift = Math.floor(offset / step);
-        return offset - shift * step;
-      }
+    st.starsOffset += starScrollSpeed * dt;
+    st.nebulaeOffset += nebulaeScrollSpeed * dt;
+    st.mountainsOffset += mountainScrollSpeed * dt;
+    st.hillsOffset += hillScrollSpeed * dt;
+    st.terrainOffset += terrainScrollSpeed * dt;
+
+    // Efficient offset wrapping to prevent overflow and ensure seamless looping
+    const wrap = (offset, period) => {
+      while (offset >= period) offset -= period;
       return offset;
     };
-    st.starsOffset = wrap(st.starsOffset, 2);
-    st.nebulaeOffset = wrap(st.nebulaeOffset, 3);
-    st.mountainsOffset = wrap(st.mountainsOffset, 10);
-    st.hillsOffset = wrap(st.hillsOffset, 8);
-    st.terrainOffset = wrap(st.terrainOffset, 6);
+    st.starsOffset = wrap(st.starsOffset, 1000);        // Large period for stars
+    st.nebulaeOffset = wrap(st.nebulaeOffset, 1200);    // Large period for nebulae
+    st.mountainsOffset = wrap(st.mountainsOffset, 500); // Mountain terrain period
+    st.hillsOffset = wrap(st.hillsOffset, 400);         // Hill terrain period  
+    st.terrainOffset = wrap(st.terrainOffset, 300);     // Ground terrain period
 
-    // Stars twinkle and drift slowly (independent movement)
+    // Individual element movement - stars drift independently with twinkling
     st.stars.forEach(s => {
+      // Stars move at their individual speeds plus the base parallax movement
       s.x += s.vx * dt;
       s.twinklePhase += s.twinkleSpeed * dt;
-      // wrap around
-      if (s.x < -50) s.x = st.width + 50;
+      // Seamless wrapping with buffer for smooth transitions
+      if (s.x < -100) s.x = st.width + 100 + Math.random() * 200;
     });
 
-    // Nebulae pulse and drift slowly (independent movement)
+    // Nebulae pulse and drift with their own movement patterns
     st.nebulae.forEach(n => {
+      // Nebulae have their individual drift plus parallax scrolling
       n.x += n.vx * dt;
       n.pulsePhase += n.pulseSpeed * dt;
-      // wrap around
-      if (n.x < -300 * n.scale) n.x = st.width + 300 * n.scale;
+      // Wrap with scale-aware buffer for larger nebulae
+      const wrapBuffer = 400 * n.scale;
+      if (n.x < -wrapBuffer) n.x = st.width + wrapBuffer + Math.random() * 200;
     });
 
-    // Clouds move slowly across the sky (independent subtle drift)
+    // Clouds drift across the sky with subtle independent movement
     st.clouds.forEach(c => {
+      // Clouds have both individual movement and parallax scrolling
       c.x += c.vx * dt;
-      // wrap around
-      if (c.x < -220 * c.scale) c.x = st.width + 220 * c.scale;
+      // Wrap with scale-based buffer for different cloud sizes
+      const wrapBuffer = 300 * c.scale;
+      if (c.x < -wrapBuffer) c.x = st.width + wrapBuffer + Math.random() * 300;
     });
 
-    // Ship control
+    // Ship control - independent of terrain parallax movement
     const k = st.keys;
     st.ship.vx = (k['ArrowRight'] ? 1 : 0) * st.ship.speed - (k['ArrowLeft'] ? 1 : 0) * st.ship.speed * 0.8;
     st.ship.vy = (k['ArrowDown'] ? 1 : 0) * st.ship.speed - (k['ArrowUp'] ? 1 : 0) * st.ship.speed;
-    // Auto scroll pushes ship to the right
-    st.ship.x += (scroll * 0.5 + st.ship.vx) * dt;
+    
+    // Ship auto-scroll - independent constant forward movement
+    const shipAutoScrollSpeed = totalScrollSpeed * 0.4; // Ship moves slower than foreground terrain
+    st.ship.x += (shipAutoScrollSpeed + st.ship.vx) * dt;
     st.ship.y += (st.ship.vy) * dt;
 
     // Clamp ship inside safe bounds and above ground
@@ -586,7 +602,8 @@ function GameCanvas({
     // Update rockets
     const g = 320 + level * 6;
     st.rockets.forEach(r => {
-      r.x += (r.vx - scroll) * dt; // world scroll minus rocket drift
+      // Rockets move relative to terrain, accounting for terrain parallax speed
+      r.x += (r.vx - terrainScrollSpeed) * dt;
       r.y += r.vy * dt;
       r.vy += g * dt * 0.35; // simple gravity after launch
       if (!r.active && r.y < groundYAt(r.x) - 30) r.active = true;
@@ -615,13 +632,16 @@ function GameCanvas({
     });
     st.rockets = st.rockets.filter(r => r.x > -60 && r.y < st.height + 60);
 
-    // Update bullets
-    st.bullets.forEach(b => { b.x += (b.vx - scroll) * dt; b.y += b.vy * dt; });
+    // Update bullets - move relative to terrain scrolling
+    st.bullets.forEach(b => { 
+      b.x += (b.vx - terrainScrollSpeed) * dt; 
+      b.y += b.vy * dt; 
+    });
     st.bullets = st.bullets.filter(b => b.x < st.width + 40 && b.x > -40);
 
-    // Update bombs
+    // Update bombs - move relative to terrain scrolling
     st.bombs.forEach(b => {
-      b.x += (b.vx - scroll) * dt;
+      b.x += (b.vx - terrainScrollSpeed) * dt;
       b.y += b.vy * dt;
       b.vy += 480 * dt;
     });
