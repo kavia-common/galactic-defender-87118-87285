@@ -4,9 +4,13 @@ import React, { useEffect, useRef } from 'react';
  * PUBLIC_INTERFACE
  * GameCanvas
  * Renders the HTML canvas and runs game loop logic:
- * - Side scrolling background/terrain
- * - Player ship with arrow key movement; auto-scroll to the right
- * - Rockets spawn on uneven ground and launch vertically with random timing
+ * - Parallax background with multiple layers:
+ *    • Sky with clouds (slowest)
+ *    • Distant mountains
+ *    • Midground hills
+ *    • Foreground ground (interacts with gameplay)
+ * - Player ship with arrow key movement; auto-scrolls to the right
+ * - Rockets spawn on uneven foreground ground and launch vertically
  * - Bullets (space) and Bombs ('b') to destroy rockets
  * - Level scaling increases spawn rate and rocket speed
  * - Emits callbacks: onScore, onLoseLife, onLevelProgress, onShoot, onBomb
@@ -22,17 +26,35 @@ function GameCanvas({
 }) {
   const canvasRef = useRef(null);
   const stateRef = useRef({
-    keys: {},
-    lastTime: 0,
+    // dimensions
     width: 1280,
     height: 720,
+
+    // input
+    keys: {},
+
+    // time
+    lastTime: 0,
+
+    // foreground ground (gameplay)
     terrain: [],
     terrainOffset: 0,
+
+    // parallax layers
+    hills: [],
+    hillsOffset: 0,
+    mountains: [],
+    mountainsOffset: 0,
+    clouds: [],
+
+    // entities
     ship: { x: 120, y: 360, w: 38, h: 22, vx: 0, vy: 0, speed: 280 },
     bullets: [],
     bombs: [],
     rockets: [],
     particles: [],
+
+    // level progression
     levelTimer: 0,
     levelDuration: 20_000, // ms per level section
   });
@@ -74,17 +96,28 @@ function GameCanvas({
       canvas.height = h;
       stateRef.current.width = w;
       stateRef.current.height = h;
+      // Rebuild layers on size change for crisp visuals
+      buildAllScenery();
     };
     resize();
     const obs = new ResizeObserver(resize);
     obs.observe(canvasRef.current.parentElement);
     return () => obs.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reset terrain when level changes to slightly alter landscape
+  // Reset terrain and layers when level changes to slightly alter landscape
   useEffect(() => {
-    buildTerrain();
+    buildAllScenery();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level]);
+
+  function buildAllScenery() {
+    buildTerrain();
+    buildHills();
+    buildMountains();
+    seedClouds();
+  }
 
   function buildTerrain() {
     const st = stateRef.current;
@@ -102,6 +135,64 @@ function GameCanvas({
     }
     st.terrain = pts;
     st.terrainOffset = 0;
+  }
+
+  function buildHills() {
+    const st = stateRef.current;
+    const pts = [];
+    const width = st.width;
+    const base = st.height * 0.78;
+    const amplitude = 50 + (level % 3) * 8; // slightly larger arcs than ground
+    const freq = 0.0018 + (level % 5) * 0.00012;
+    for (let x = 0; x < width + 5000; x += 8) {
+      const y =
+        base +
+        Math.sin((x + level * 137) * freq) * amplitude +
+        Math.cos((x + level * 251) * freq * 0.7) * (amplitude * 0.25);
+      pts.push({ x, y });
+    }
+    st.hills = pts;
+    st.hillsOffset = 0;
+  }
+
+  function buildMountains() {
+    const st = stateRef.current;
+    const pts = [];
+    const width = st.width;
+    const base = st.height * 0.7;
+    const amplitude = 90 + (level % 4) * 10;
+    const freq = 0.0012 + (level % 6) * 0.00008;
+    for (let x = 0; x < width + 7000; x += 10) {
+      const y =
+        base +
+        Math.sin((x + level * 97) * freq) * amplitude +
+        Math.cos((x + level * 173) * freq * 0.5) * (amplitude * 0.3);
+      pts.push({ x, y });
+    }
+    st.mountains = pts;
+    st.mountainsOffset = 0;
+  }
+
+  function seedClouds() {
+    const st = stateRef.current;
+    const clouds = [];
+    const count = Math.max(6, Math.floor(st.width / 180));
+    for (let i = 0; i < count; i++) {
+      const scale = 0.6 + Math.random() * 1.1;
+      const y = st.height * (0.1 + Math.random() * 0.25);
+      const x = Math.random() * (st.width + 800) - 400;
+      clouds.push(makeCloud(x, y, scale));
+    }
+    st.clouds = clouds;
+  }
+
+  function makeCloud(x, y, scale) {
+    return {
+      x, y, scale,
+      // subtle variance in speed; very slow to emphasize depth
+      vx: - (8 + Math.random() * 12) * (0.7 + scale * 0.3),
+      opacity: 0.65 + Math.random() * 0.2,
+    };
   }
 
   function shoot() {
@@ -193,15 +284,32 @@ function GameCanvas({
     // Clear
     ctx.clearRect(0, 0, st.width, st.height);
 
-    // World scroll speed scales with level
+    // Base world scroll speed scales with level
     const scroll = 120 + level * 6;
 
-    // Update terrain offset
-    st.terrainOffset += scroll * dt;
-    if (st.terrainOffset > 6) {
-      const shift = Math.floor(st.terrainOffset / 6);
-      st.terrainOffset -= shift * 6;
-    }
+    // Update parallax offsets (slower for distant layers)
+    st.mountainsOffset += (scroll * 0.25) * dt;
+    st.hillsOffset += (scroll * 0.55) * dt;
+    st.terrainOffset += (scroll * 1.0) * dt;
+
+    // Bound offsets to avoid large numbers (wrapping)
+    const wrap = (offset, step) => {
+      if (offset > step) {
+        const shift = Math.floor(offset / step);
+        return offset - shift * step;
+      }
+      return offset;
+    };
+    st.mountainsOffset = wrap(st.mountainsOffset, 10);
+    st.hillsOffset = wrap(st.hillsOffset, 8);
+    st.terrainOffset = wrap(st.terrainOffset, 6);
+
+    // Clouds move slowly across the sky (independent subtle drift)
+    st.clouds.forEach(c => {
+      c.x += c.vx * dt;
+      // wrap around
+      if (c.x < -220 * c.scale) c.x = st.width + 220 * c.scale;
+    });
 
     // Ship control
     const k = st.keys;
@@ -298,17 +406,17 @@ function GameCanvas({
       onLevelProgress && onLevelProgress();
     }
 
-    // Draw background sky
-    drawSky(ctx);
-
-    // Draw terrain
-    drawTerrain(ctx);
+    // Draw scene in correct depth order
+    drawSky(ctx);           // background gradient
+    drawClouds(ctx);        // clouds in the sky
+    drawMountains(ctx);     // distant mountains
+    drawHills(ctx);         // midground rolling hills
+    drawTerrain(ctx);       // playable ground (foreground)
 
     // Draw rockets
-    ctx.fillStyle = '#92400E';
     st.rockets.forEach(r => {
       ctx.save();
-      ctx.fillStyle = r.active ? '#92400E' : '#B45309';
+      ctx.fillStyle = r.active ? '#92400E' : '#B45309'; // Heritage Browns
       ctx.fillRect(r.x, r.y, r.w, r.h);
       ctx.restore();
     });
@@ -357,18 +465,112 @@ function GameCanvas({
     return st.terrain[idx]?.y ?? st.height * 0.85;
   }
 
+  // Visuals
+
   function drawSky(ctx) {
     const st = stateRef.current;
     const grd = ctx.createLinearGradient(0, 0, 0, st.height);
-    grd.addColorStop(0, '#F3E9D2');
+    // Heritage Brown compatible sky tones
+    grd.addColorStop(0, '#F7F2E6');
+    grd.addColorStop(0.6, '#F3E9D2');
     grd.addColorStop(1, '#FDF6E3');
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, st.width, st.height);
   }
 
+  function drawClouds(ctx) {
+    const st = stateRef.current;
+    ctx.save();
+    st.clouds.forEach(c => {
+      drawCloudShape(ctx, c.x, c.y, c.scale, c.opacity);
+    });
+    ctx.restore();
+  }
+
+  function drawCloudShape(ctx, x, y, scale = 1, opacity = 0.75) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.fillStyle = '#FEF3C7'; // Heritage light cream
+    ctx.beginPath();
+    // simple puffy cloud using multiple arcs
+    const r = 18 * scale;
+    ctx.arc(x, y, r, Math.PI * 0.5, Math.PI * 1.5);
+    ctx.arc(x + r * 1.2, y - r * 0.8, r * 1.1, Math.PI, 0);
+    ctx.arc(x + r * 2.2, y, r * 0.9, Math.PI * 1.5, Math.PI * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawMountains(ctx) {
+    const st = stateRef.current;
+    const pts = st.mountains;
+    if (!pts.length) return;
+    ctx.save();
+    // deep muted brown silhouette
+    ctx.fillStyle = '#AE8B5C';
+    ctx.strokeStyle = '#987447';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    // shift points by parallax offset
+    let started = false;
+    const period = (pts[pts.length - 1]?.x || 0) + 200;
+    const off = st.mountainsOffset % period;
+    for (let i = 0; i < pts.length; i++) {
+      const x = pts[i].x - off;
+      if (x < -12) continue;
+      if (x > st.width + 12) break;
+      if (!started) { ctx.moveTo(x, pts[i].y); started = true; }
+      else ctx.lineTo(x, pts[i].y);
+    }
+    ctx.lineTo(st.width, st.height);
+    ctx.lineTo(0, st.height);
+    ctx.closePath();
+    ctx.fill();
+    // optional subtle stroke for ridge definition
+    ctx.globalAlpha = 0.35;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawHills(ctx) {
+    const st = stateRef.current;
+    const pts = st.hills;
+    if (!pts.length) return;
+    ctx.save();
+    // midground hill coloring
+    ctx.fillStyle = '#C8B68A';
+    ctx.strokeStyle = '#B89D6C';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    let started = false;
+    const period = (pts[pts.length - 1]?.x || 0) + 200;
+    const off = st.hillsOffset % period;
+    for (let i = 0; i < pts.length; i++) {
+      const x = pts[i].x - off;
+      if (x < -10) continue;
+      if (x > st.width + 10) break;
+      if (!started) { ctx.moveTo(x, pts[i].y); started = true; }
+      else ctx.lineTo(x, pts[i].y);
+    }
+    ctx.lineTo(st.width, st.height);
+    ctx.lineTo(0, st.height);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 0.4;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
   function drawTerrain(ctx) {
     const st = stateRef.current;
     ctx.save();
+    // foreground ground (playable)
     ctx.fillStyle = '#D6C8A5';
     ctx.strokeStyle = '#B89D6C';
     ctx.lineWidth = 2;
@@ -376,12 +578,15 @@ function GameCanvas({
     ctx.beginPath();
     const pts = st.terrain;
     if (pts.length) {
-      ctx.moveTo(0, pts[0].y);
-      for (let i = 1; i < pts.length; i++) {
-        const x = pts[i].x - (st.terrainOffset % (pts.length * 6));
+      let started = false;
+      const period = (pts[pts.length - 1]?.x || 0) + 200;
+      const off = st.terrainOffset % period;
+      for (let i = 0; i < pts.length; i++) {
+        const x = pts[i].x - off;
         if (x < -6) continue;
         if (x > st.width + 6) break;
-        ctx.lineTo(x, pts[i].y);
+        if (!started) { ctx.moveTo(x, pts[i].y); started = true; }
+        else ctx.lineTo(x, pts[i].y);
       }
       ctx.lineTo(st.width, st.height);
       ctx.lineTo(0, st.height);
@@ -422,7 +627,7 @@ function GameCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [running, level]);
 
-  return <canvas ref={canvasRef} role="img" aria-label="Game canvas"></canvas>;
+  return <canvas ref={canvasRef} role="img" aria-label="Game canvas with parallax terrain"></canvas>;
 }
 
 export default GameCanvas;
