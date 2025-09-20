@@ -69,7 +69,7 @@ function App() {
       tickRef.current = null;
     }
     return () => { if (tickRef.current) cancelAnimationFrame(tickRef.current); };
-  }, [inGame, paused]);
+  }, [inGame, paused, elapsedMs]);
 
   // Music management
   useEffect(() => {

@@ -5,6 +5,8 @@ import React, { useEffect, useRef } from 'react';
  * GameCanvas
  * Renders the HTML canvas and runs game loop logic:
  * - Parallax background with multiple layers:
+ *    • Animated twinkling stars (deepest)
+ *    • Pulsing nebulae with Heritage Brown theme colors
  *    • Sky with clouds (slowest)
  *    • Distant mountains
  *    • Midground hills
@@ -40,7 +42,11 @@ function GameCanvas({
     terrain: [],
     terrainOffset: 0,
 
-    // parallax layers
+    // parallax layers (ordered from back to front)
+    stars: [],
+    starsOffset: 0,
+    nebulae: [],
+    nebulaeOffset: 0,
     hills: [],
     hillsOffset: 0,
     mountains: [],
@@ -117,6 +123,8 @@ function GameCanvas({
     buildHills();
     buildMountains();
     seedClouds();
+    seedStars();
+    seedNebulae();
   }
 
   function buildTerrain() {
@@ -193,6 +201,47 @@ function GameCanvas({
       vx: - (8 + Math.random() * 12) * (0.7 + scale * 0.3),
       opacity: 0.65 + Math.random() * 0.2,
     };
+  }
+
+  function seedStars() {
+    const st = stateRef.current;
+    const stars = [];
+    const count = Math.max(80, Math.floor(st.width / 15)); // more stars for larger screens
+    for (let i = 0; i < count; i++) {
+      const scale = 0.3 + Math.random() * 1.2;
+      const x = Math.random() * (st.width + 1000) - 500;
+      const y = Math.random() * st.height * 0.6; // upper portion of sky
+      const twinkleSpeed = 0.5 + Math.random() * 2;
+      const brightness = 0.4 + Math.random() * 0.6;
+      stars.push({
+        x, y, scale, brightness, twinkleSpeed,
+        vx: -(2 + Math.random() * 4), // very slow drift
+        twinklePhase: Math.random() * Math.PI * 2,
+      });
+    }
+    st.stars = stars;
+    st.starsOffset = 0;
+  }
+
+  function seedNebulae() {
+    const st = stateRef.current;
+    const nebulae = [];
+    const count = Math.max(3, Math.floor(st.width / 400)); // fewer, larger nebulae
+    for (let i = 0; i < count; i++) {
+      const scale = 0.8 + Math.random() * 1.5;
+      const x = Math.random() * (st.width + 1200) - 600;
+      const y = st.height * (0.1 + Math.random() * 0.4);
+      const opacity = 0.15 + Math.random() * 0.25;
+      const colorType = Math.floor(Math.random() * 3); // 3 color variations
+      nebulae.push({
+        x, y, scale, opacity, colorType,
+        vx: -(1 + Math.random() * 3), // very slow drift
+        pulsePhase: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.3 + Math.random() * 0.7,
+      });
+    }
+    st.nebulae = nebulae;
+    st.nebulaeOffset = 0;
   }
 
   function shoot() {
@@ -288,6 +337,8 @@ function GameCanvas({
     const scroll = 120 + level * 6;
 
     // Update parallax offsets (slower for distant layers)
+    st.starsOffset += (scroll * 0.05) * dt;     // slowest - deep space
+    st.nebulaeOffset += (scroll * 0.08) * dt;   // very slow - deep space
     st.mountainsOffset += (scroll * 0.25) * dt;
     st.hillsOffset += (scroll * 0.55) * dt;
     st.terrainOffset += (scroll * 1.0) * dt;
@@ -300,9 +351,27 @@ function GameCanvas({
       }
       return offset;
     };
+    st.starsOffset = wrap(st.starsOffset, 2);
+    st.nebulaeOffset = wrap(st.nebulaeOffset, 3);
     st.mountainsOffset = wrap(st.mountainsOffset, 10);
     st.hillsOffset = wrap(st.hillsOffset, 8);
     st.terrainOffset = wrap(st.terrainOffset, 6);
+
+    // Stars twinkle and drift slowly (independent movement)
+    st.stars.forEach(s => {
+      s.x += s.vx * dt;
+      s.twinklePhase += s.twinkleSpeed * dt;
+      // wrap around
+      if (s.x < -50) s.x = st.width + 50;
+    });
+
+    // Nebulae pulse and drift slowly (independent movement)
+    st.nebulae.forEach(n => {
+      n.x += n.vx * dt;
+      n.pulsePhase += n.pulseSpeed * dt;
+      // wrap around
+      if (n.x < -300 * n.scale) n.x = st.width + 300 * n.scale;
+    });
 
     // Clouds move slowly across the sky (independent subtle drift)
     st.clouds.forEach(c => {
@@ -376,7 +445,6 @@ function GameCanvas({
         return aabb(a, r);
       });
       if (hitIdx >= 0) {
-        const b = st.bullets[hitIdx];
         explode(r.x + r.w / 2, r.y + r.h / 2, 10);
         st.bullets.splice(hitIdx, 1);
         hits++;
@@ -408,6 +476,8 @@ function GameCanvas({
 
     // Draw scene in correct depth order
     drawSky(ctx);           // background gradient
+    drawStars(ctx);         // distant stars (deepest)
+    drawNebulae(ctx);       // nebulae behind clouds
     drawClouds(ctx);        // clouds in the sky
     drawMountains(ctx);     // distant mountains
     drawHills(ctx);         // midground rolling hills
@@ -484,6 +554,80 @@ function GameCanvas({
     st.clouds.forEach(c => {
       drawCloudShape(ctx, c.x, c.y, c.scale, c.opacity);
     });
+    ctx.restore();
+  }
+
+  function drawStars(ctx) {
+    const st = stateRef.current;
+    ctx.save();
+    st.stars.forEach(s => {
+      const twinkle = 0.5 + 0.5 * Math.sin(s.twinklePhase);
+      const alpha = s.brightness * twinkle;
+      const x = s.x - st.starsOffset;
+      
+      // Skip stars outside visible area
+      if (x < -10 || x > st.width + 10) return;
+      
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#F7F2E6'; // Heritage cream-white for stars
+      ctx.beginPath();
+      
+      // Draw star shape
+      const size = s.scale * 2;
+      ctx.arc(x, s.y, size, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Add subtle glow for larger stars
+      if (s.scale > 0.8) {
+        ctx.globalAlpha = alpha * 0.3;
+        ctx.beginPath();
+        ctx.arc(x, s.y, size * 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+
+  function drawNebulae(ctx) {
+    const st = stateRef.current;
+    ctx.save();
+    st.nebulae.forEach(n => {
+      const pulse = 0.7 + 0.3 * Math.sin(n.pulsePhase);
+      const alpha = n.opacity * pulse;
+      const x = n.x - st.nebulaeOffset;
+      
+      // Skip nebulae outside visible area
+      if (x < -400 * n.scale || x > st.width + 400 * n.scale) return;
+      
+      ctx.globalAlpha = alpha;
+      
+      // Heritage Brown theme nebula colors
+      const colors = [
+        '#E4D4B8', // light heritage cream
+        '#D2C2A6', // medium heritage tan
+        '#C8B68A'  // darker heritage beige
+      ];
+      ctx.fillStyle = colors[n.colorType % colors.length];
+      
+      // Draw nebula as gradient blob
+      const grd = ctx.createRadialGradient(x, n.y, 0, x, n.y, 120 * n.scale);
+      grd.addColorStop(0, colors[n.colorType % colors.length]);
+      grd.addColorStop(0.6, colors[n.colorType % colors.length] + '80'); // semi-transparent
+      grd.addColorStop(1, 'transparent');
+      
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      // Create organic nebula shape using multiple overlapping circles
+      for (let i = 0; i < 5; i++) {
+        const offsetX = (Math.sin(n.pulsePhase + i) * 20 * n.scale);
+        const offsetY = (Math.cos(n.pulsePhase + i * 0.7) * 15 * n.scale);
+        const radius = (60 + i * 15) * n.scale * pulse;
+        ctx.arc(x + offsetX, n.y + offsetY, radius, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
