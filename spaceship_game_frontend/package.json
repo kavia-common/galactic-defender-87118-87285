@@ -1,6 +1,6 @@
 {
-  "name": "react-kavia",
-  "version": "0.1.0",
+  "name": "spaceship-game-frontend",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
@@ -10,7 +10,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "react-scripts test --watchAll=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
