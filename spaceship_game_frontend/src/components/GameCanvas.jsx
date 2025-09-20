@@ -1404,214 +1404,418 @@ function GameCanvas({
       }
     }
     
-    // === MULTI-LAYERED HULL CONSTRUCTION ===
+    // === ULTRA-SOPHISTICATED MULTI-LAYERED HULL CONSTRUCTION ===
     
-    // Layer 1: Base hull shadow/depth
+    // Advanced time-based effects for dynamic metallic shimmer
+    const timeShimmer = 0.8 + 0.2 * Math.sin(performance.now() * 0.001);
+    const microVibration = Math.sin(performance.now() * 0.003) * 0.3;
+    
+    // Layer 0: Deep structural shadow for 3D depth
+    ctx.fillStyle = '#291107'; // Ultra-deep brown shadow
+    ctx.fillRect(2, 2, s.w, s.h);
+    
+    // Layer 1: Base hull shadow with offset for dimensional depth
     ctx.fillStyle = '#451A03'; // Deep shadow brown
     ctx.fillRect(1, 1, s.w, s.h);
     
-    // Layer 2: Main hull with enhanced gradient and metallic sheen
+    // Layer 2: Ultra-complex multi-directional hull gradient with shimmer
     const hullGrd = ctx.createLinearGradient(0, 0, s.w, s.h);
-    hullGrd.addColorStop(0, '#7C2D12');    // Shadow edge
-    hullGrd.addColorStop(0.15, '#92400E');  // Primary Heritage brown
-    hullGrd.addColorStop(0.35, '#B45309');  // Highlight
-    hullGrd.addColorStop(0.65, '#D97706');  // Metallic shine
-    hullGrd.addColorStop(0.8, '#B45309');   // Back to secondary
-    hullGrd.addColorStop(1, '#7C2D12');     // Shadow edge
+    hullGrd.addColorStop(0, '#5D1F0A');      // Deep edge shadow
+    hullGrd.addColorStop(0.08, '#7C2D12');   // Primary shadow edge
+    hullGrd.addColorStop(0.18, '#92400E');   // Primary Heritage brown
+    hullGrd.addColorStop(0.35, '#B45309');   // Mid highlight
+    hullGrd.addColorStop(0.5, `rgba(217, 119, 6, ${timeShimmer})`);  // Dynamic metallic shine
+    hullGrd.addColorStop(0.65, '#F59E0B');   // Bright metallic shine
+    hullGrd.addColorStop(0.8, '#B45309');    // Back to secondary
+    hullGrd.addColorStop(0.92, '#92400E');   // Return to primary
+    hullGrd.addColorStop(1, '#5D1F0A');      // Deep edge shadow
     ctx.fillStyle = hullGrd;
     ctx.fillRect(0, 0, s.w, s.h);
     
-    // Layer 3: Hull panel lines and segments
-    ctx.strokeStyle = '#451A03';
-    ctx.lineWidth = 0.5;
-    // Vertical panel lines
+    // Layer 2.5: Surface texture overlay with Heritage Brown micro-pattern
+    ctx.globalAlpha = 0.15;
+    ctx.fillStyle = '#451A03';
+    for (let x = 2; x < s.w - 2; x += 3) {
+      for (let y = 4; y < s.h - 4; y += 4) {
+        if (Math.random() < 0.6) {
+          ctx.fillRect(x + Math.sin(y * 0.2) * 0.5, y, 1, 1);
+        }
+      }
+    }
+    ctx.globalAlpha = 1;
+    
+    // Layer 3: Complex geometric hull panel system with refined segmentation
+    ctx.strokeStyle = '#1A0700';
+    ctx.lineWidth = 0.8;
     ctx.beginPath();
-    ctx.moveTo(s.w * 0.25, 2);
-    ctx.lineTo(s.w * 0.25, s.h - 2);
-    ctx.moveTo(s.w * 0.6, 2);
-    ctx.lineTo(s.w * 0.6, s.h - 2);
-    ctx.moveTo(s.w * 0.8, 2);
-    ctx.lineTo(s.w * 0.8, s.h - 2);
-    // Horizontal panel line
-    ctx.moveTo(2, s.h * 0.5);
-    ctx.lineTo(s.w - 2, s.h * 0.5);
+    // Primary vertical panel divisions
+    ctx.moveTo(s.w * 0.2, 1);
+    ctx.lineTo(s.w * 0.2, s.h - 1);
+    ctx.moveTo(s.w * 0.4, 1);
+    ctx.lineTo(s.w * 0.4, s.h - 1);
+    ctx.moveTo(s.w * 0.6, 1);
+    ctx.lineTo(s.w * 0.6, s.h - 1);
+    ctx.moveTo(s.w * 0.78, 1);
+    ctx.lineTo(s.w * 0.78, s.h - 1);
+    // Horizontal structural divisions
+    ctx.moveTo(1, s.h * 0.3);
+    ctx.lineTo(s.w - 1, s.h * 0.3);
+    ctx.moveTo(1, s.h * 0.5);
+    ctx.lineTo(s.w - 1, s.h * 0.5);
+    ctx.moveTo(1, s.h * 0.7);
+    ctx.lineTo(s.w - 1, s.h * 0.7);
     ctx.stroke();
     
-    // Layer 4: Metallic reflection highlights
-    const metalGrd = ctx.createLinearGradient(0, 0, 0, s.h);
-    metalGrd.addColorStop(0, 'rgba(254, 243, 199, 0.8)'); // Bright cream reflection
-    metalGrd.addColorStop(0.3, 'rgba(254, 243, 199, 0.4)');
-    metalGrd.addColorStop(0.7, 'rgba(254, 243, 199, 0.1)');
+    // Layer 3.5: Secondary panel detail lines
+    ctx.strokeStyle = 'rgba(69, 26, 3, 0.6)';
+    ctx.lineWidth = 0.3;
+    ctx.beginPath();
+    // Fine detail panel segments
+    for (let i = 0.25; i < 0.75; i += 0.125) {
+      ctx.moveTo(s.w * i, 3);
+      ctx.lineTo(s.w * i, s.h - 3);
+    }
+    // Horizontal micro-panels
+    for (let i = 0.35; i < 0.65; i += 0.1) {
+      ctx.moveTo(3, s.h * i);
+      ctx.lineTo(s.w - 3, s.h * i);
+    }
+    ctx.stroke();
+    
+    // Layer 4: Advanced metallic reflection system with dynamic positioning
+    const metalGrd = ctx.createLinearGradient(microVibration, 0, microVibration, s.h);
+    metalGrd.addColorStop(0, `rgba(254, 243, 199, ${0.9 * timeShimmer})`); // Ultra-bright cream reflection
+    metalGrd.addColorStop(0.15, `rgba(254, 243, 199, ${0.7 * timeShimmer})`);
+    metalGrd.addColorStop(0.35, `rgba(254, 243, 199, ${0.4 * timeShimmer})`);
+    metalGrd.addColorStop(0.6, `rgba(254, 243, 199, ${0.15 * timeShimmer})`);
     metalGrd.addColorStop(1, 'rgba(254, 243, 199, 0)');
     ctx.fillStyle = metalGrd;
-    ctx.fillRect(2, 1, s.w - 4, s.h * 0.4);
+    ctx.fillRect(1, 0, s.w - 2, s.h * 0.5);
     
-    // Layer 5: Upper hull metallic strip with rivets
-    ctx.fillStyle = '#A16207'; // Metallic bronze
-    ctx.fillRect(3, 2, s.w - 6, 3);
-    ctx.fillStyle = '#FEF3C7'; // Bright metallic highlight
-    ctx.fillRect(3, 2, s.w - 6, 1);
-    
-    // Rivets along the metallic strip
-    ctx.fillStyle = '#451A03';
-    for (let i = 8; i < s.w - 3; i += 6) {
-      ctx.fillRect(i, 3, 1, 1);
+    // Layer 4.5: Secondary angled reflection streaks
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.6 * timeShimmer})`;
+    for (let i = 0; i < 4; i++) {
+      const x = s.w * (0.1 + i * 0.15);
+      const width = 1 + Math.sin(performance.now() * 0.002 + i) * 0.5;
+      ctx.fillRect(x, 2, width, s.h * 0.4);
     }
     
-    // Layer 6: Lower hull reinforcement band
-    ctx.fillStyle = '#A16207';
-    ctx.fillRect(3, s.h - 5, s.w - 6, 3);
-    ctx.fillStyle = '#7C2D12'; // Shadow line
-    ctx.fillRect(3, s.h - 2, s.w - 6, 1);
+    // Layer 5: Ultra-sophisticated hull armor strips with complex riveting
+    // Primary upper armor band
+    const armorGrd = ctx.createLinearGradient(0, 2, 0, 6);
+    armorGrd.addColorStop(0, '#C8822A'); // Bright metallic bronze
+    armorGrd.addColorStop(0.3, '#A16207'); // Metallic bronze
+    armorGrd.addColorStop(0.7, '#7C4A03'); // Darker bronze
+    armorGrd.addColorStop(1, '#451A03'); // Deep bronze shadow
+    ctx.fillStyle = armorGrd;
+    ctx.fillRect(2, 1, s.w - 4, 5);
     
-    // === ENHANCED NOSE CONE WITH SHARP LINES ===
+    // Armor band highlight edge
+    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
+    ctx.fillRect(2, 1, s.w - 4, 1);
     
-    // Nose cone base shadow
+    // Ultra-detailed riveting system with varying sizes
+    ctx.fillStyle = '#291107';
+    for (let i = 6; i < s.w - 3; i += 4) {
+      // Main rivets
+      ctx.fillRect(i, 3, 1, 1);
+      // Micro rivets
+      if (i % 8 === 2) {
+        ctx.fillRect(i + 1, 2, 0.5, 0.5);
+        ctx.fillRect(i + 1, 4, 0.5, 0.5);
+      }
+    }
+    
+    // Secondary lower armor reinforcement with gradient
+    const lowerArmorGrd = ctx.createLinearGradient(0, s.h - 6, 0, s.h - 1);
+    lowerArmorGrd.addColorStop(0, '#451A03'); // Deep bronze shadow
+    lowerArmorGrd.addColorStop(0.3, '#7C4A03'); // Darker bronze
+    lowerArmorGrd.addColorStop(0.7, '#A16207'); // Metallic bronze
+    lowerArmorGrd.addColorStop(1, '#C8822A'); // Bright metallic bronze
+    ctx.fillStyle = lowerArmorGrd;
+    ctx.fillRect(2, s.h - 6, s.w - 4, 5);
+    
+    // Lower armor shadow line
+    ctx.fillStyle = '#1A0700';
+    ctx.fillRect(2, s.h - 2, s.w - 4, 1);
+    
+    // Tertiary mid-hull reinforcement strips
+    ctx.fillStyle = '#92400E';
+    ctx.fillRect(s.w * 0.1, s.h * 0.45, s.w * 0.8, 2);
+    ctx.fillStyle = `rgba(161, 98, 7, ${timeShimmer})`;
+    ctx.fillRect(s.w * 0.1, s.h * 0.45, s.w * 0.8, 1);
+    
+    // === RAZOR-SHARP MULTI-SEGMENT NOSE CONE ===
+    
+    // Nose cone ultra-deep shadow
+    ctx.fillStyle = '#1A0700';
+    ctx.beginPath();
+    ctx.moveTo(s.w + 2, s.h / 2 + 2);
+    ctx.lineTo(s.w + 12, s.h / 2 - 3);
+    ctx.lineTo(s.w + 16, s.h / 2 - 1);
+    ctx.lineTo(s.w + 16, s.h / 2 + 3);
+    ctx.lineTo(s.w + 12, s.h / 2 + 5);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Multi-layered nose cone construction
     ctx.fillStyle = '#451A03';
     ctx.beginPath();
     ctx.moveTo(s.w + 1, s.h / 2 + 1);
     ctx.lineTo(s.w + 11, s.h / 2 - 4);
-    ctx.lineTo(s.w + 14, s.h / 2 - 2);
-    ctx.lineTo(s.w + 14, s.h / 2 + 4);
+    ctx.lineTo(s.w + 15, s.h / 2 - 2);
+    ctx.lineTo(s.w + 15, s.h / 2 + 4);
     ctx.lineTo(s.w + 11, s.h / 2 + 6);
     ctx.closePath();
     ctx.fill();
     
-    // Primary nose cone with gradient
-    const noseGrd = ctx.createLinearGradient(s.w, s.h / 2 - 5, s.w + 13, s.h / 2 + 5);
-    noseGrd.addColorStop(0, '#B45309');
-    noseGrd.addColorStop(0.4, '#D97706');
-    noseGrd.addColorStop(0.8, '#F59E0B');
-    noseGrd.addColorStop(1, '#92400E');
+    // Primary nose cone with ultra-complex gradient
+    const noseGrd = ctx.createRadialGradient(s.w + 8, s.h / 2, 0, s.w + 8, s.h / 2, 12);
+    noseGrd.addColorStop(0, `rgba(245, 158, 11, ${timeShimmer})`);
+    noseGrd.addColorStop(0.3, '#D97706');
+    noseGrd.addColorStop(0.6, '#B45309');
+    noseGrd.addColorStop(0.85, '#92400E');
+    noseGrd.addColorStop(1, '#7C2D12');
     ctx.fillStyle = noseGrd;
     ctx.beginPath();
     ctx.moveTo(s.w, s.h / 2);
     ctx.lineTo(s.w + 10, s.h / 2 - 5);
-    ctx.lineTo(s.w + 13, s.h / 2 - 3);
-    ctx.lineTo(s.w + 13, s.h / 2 + 3);
+    ctx.lineTo(s.w + 14, s.h / 2 - 3);
+    ctx.lineTo(s.w + 14, s.h / 2 + 3);
     ctx.lineTo(s.w + 10, s.h / 2 + 5);
     ctx.closePath();
     ctx.fill();
     
-    // Nose tip with sharp metallic point
-    ctx.fillStyle = '#FEF3C7'; // Bright metallic tip
+    // Segmented nose cone panels
+    ctx.strokeStyle = '#451A03';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(s.w + 3, s.h / 2 - 3);
+    ctx.lineTo(s.w + 11, s.h / 2 - 1);
+    ctx.moveTo(s.w + 3, s.h / 2 + 3);
+    ctx.lineTo(s.w + 11, s.h / 2 + 1);
+    ctx.moveTo(s.w + 6, s.h / 2 - 4);
+    ctx.lineTo(s.w + 6, s.h / 2 + 4);
+    ctx.stroke();
+    
+    // Ultra-sharp metallic nose tip with multi-layer construction
+    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
     ctx.beginPath();
     ctx.moveTo(s.w + 10, s.h / 2 - 2);
-    ctx.lineTo(s.w + 13, s.h / 2 - 1);
-    ctx.lineTo(s.w + 13, s.h / 2 + 1);
+    ctx.lineTo(s.w + 14, s.h / 2 - 1);
+    ctx.lineTo(s.w + 14, s.h / 2 + 1);
     ctx.lineTo(s.w + 10, s.h / 2 + 2);
     ctx.closePath();
     ctx.fill();
     
-    // Nose cone edge highlights
-    ctx.strokeStyle = '#FEF3C7';
-    ctx.lineWidth = 1;
+    // Tip core highlighting
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.beginPath();
+    ctx.moveTo(s.w + 12, s.h / 2 - 0.5);
+    ctx.lineTo(s.w + 14, s.h / 2);
+    ctx.lineTo(s.w + 12, s.h / 2 + 0.5);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Nose cone premium edge highlights with shimmer
+    ctx.strokeStyle = `rgba(254, 243, 199, ${timeShimmer})`;
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(s.w + 10, s.h / 2 - 5);
-    ctx.lineTo(s.w + 13, s.h / 2 - 3);
+    ctx.lineTo(s.w + 14, s.h / 2 - 3);
     ctx.moveTo(s.w + 10, s.h / 2 + 5);
-    ctx.lineTo(s.w + 13, s.h / 2 + 3);
+    ctx.lineTo(s.w + 14, s.h / 2 + 3);
     ctx.stroke();
     
-    // === ENHANCED CANOPY WITH DETAILED REFLECTIONS ===
+    // === ULTRA-PREMIUM CANOPY WITH CRYSTAL-CLEAR REFLECTIONS ===
     
-    // Canopy frame
+    // Canopy structural frame with depth
+    ctx.fillStyle = '#451A03';
+    ctx.fillRect(s.w * 0.34, 1, 16, s.h - 2);
     ctx.fillStyle = '#7C2D12';
     ctx.fillRect(s.w * 0.35, 2, 14, s.h - 4);
     
-    // Main canopy with complex gradient
-    const canopyGrd = ctx.createLinearGradient(s.w * 0.36, 3, s.w * 0.36 + 12, s.h - 6);
-    canopyGrd.addColorStop(0, '#FEF3C7');    // Bright reflection
-    canopyGrd.addColorStop(0.2, '#F3E9D2');  // Light cream
-    canopyGrd.addColorStop(0.5, '#E6D5B0');  // Medium cream
-    canopyGrd.addColorStop(0.8, '#D4C5A2');  // Darker cream
-    canopyGrd.addColorStop(1, '#C8B68A');    // Base color
+    // Main canopy with ultra-complex multi-directional gradient
+    const canopyGrd = ctx.createRadialGradient(s.w * 0.42, s.h * 0.3, 0, s.w * 0.42, s.h * 0.7, 10);
+    canopyGrd.addColorStop(0, `rgba(254, 243, 199, ${timeShimmer})`);    // Ultra-bright reflection
+    canopyGrd.addColorStop(0.15, '#F3E9D2');  // Light cream
+    canopyGrd.addColorStop(0.35, '#E6D5B0');  // Medium cream
+    canopyGrd.addColorStop(0.6, '#D4C5A2');   // Darker cream
+    canopyGrd.addColorStop(0.85, '#C8B68A');  // Base color
+    canopyGrd.addColorStop(1, '#B89D6C');     // Deep base
     ctx.fillStyle = canopyGrd;
     ctx.fillRect(s.w * 0.36, 3, 12, s.h - 6);
     
-    // Canopy reflection streaks
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-    ctx.fillRect(s.w * 0.37, 4, 2, s.h - 8);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.fillRect(s.w * 0.40, 4, 1, s.h - 8);
-    ctx.fillRect(s.w * 0.43, 5, 1, s.h - 10);
+    // Ultra-realistic canopy reflection streaks with time variation
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.95 * timeShimmer})`;
+    ctx.fillRect(s.w * 0.37, 4, 3, s.h - 8);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.7 * timeShimmer})`;
+    ctx.fillRect(s.w * 0.41, 4, 2, s.h - 8);
+    ctx.fillStyle = `rgba(255, 255, 255, ${0.5 * timeShimmer})`;
+    ctx.fillRect(s.w * 0.44, 5, 1, s.h - 10);
+    ctx.fillRect(s.w * 0.46, 6, 1, s.h - 12);
     
-    // Canopy frame details
-    ctx.strokeStyle = '#451A03';
-    ctx.lineWidth = 1;
+    // Canopy environmental reflections (simulated sky/ground)
+    ctx.fillStyle = 'rgba(183, 157, 108, 0.3)';
+    ctx.fillRect(s.w * 0.37, s.h * 0.6, 10, 2);
+    ctx.fillStyle = 'rgba(247, 242, 230, 0.4)';
+    ctx.fillRect(s.w * 0.37, s.h * 0.25, 10, 3);
+    
+    // Canopy frame ultra-details with beveled edges
+    ctx.strokeStyle = '#291107';
+    ctx.lineWidth = 1.5;
     ctx.strokeRect(s.w * 0.36, 3, 12, s.h - 6);
+    ctx.strokeStyle = `rgba(161, 98, 7, ${timeShimmer})`;
+    ctx.lineWidth = 0.5;
+    ctx.strokeRect(s.w * 0.365, 3.5, 11, s.h - 7);
     
-    // === DETAILED WING ASSEMBLIES ===
+    // === HYPER-DETAILED WING ASSEMBLIES WITH GEOMETRIC COMPLEXITY ===
     
-    // Upper wing assembly
-    ctx.fillStyle = '#7C2D12'; // Wing shadow
-    ctx.fillRect(s.w * 0.55, 0, 14, 4);
+    // Upper wing comprehensive assembly
+    ctx.fillStyle = '#291107'; // Ultra-deep wing shadow
+    ctx.fillRect(s.w * 0.54, -1, 16, 6);
+    ctx.fillStyle = '#451A03'; // Deep wing shadow
+    ctx.fillRect(s.w * 0.55, 0, 15, 5);
+    ctx.fillStyle = '#7C2D12'; // Wing base shadow
+    ctx.fillRect(s.w * 0.56, 0, 14, 4);
     
-    ctx.fillStyle = '#92400E'; // Wing base
-    ctx.fillRect(s.w * 0.56, 0, 12, 3);
+    // Wing gradient construction
+    const wingGrd = ctx.createLinearGradient(s.w * 0.56, 0, s.w * 0.7, 3);
+    wingGrd.addColorStop(0, '#92400E');
+    wingGrd.addColorStop(0.4, '#B45309');
+    wingGrd.addColorStop(0.8, `rgba(217, 119, 6, ${timeShimmer})`);
+    wingGrd.addColorStop(1, '#F59E0B');
+    ctx.fillStyle = wingGrd;
+    ctx.fillRect(s.w * 0.57, 0, 12, 3);
     
-    // Wing details and weapon hardpoints
-    ctx.fillStyle = '#B45309';
-    ctx.fillRect(s.w * 0.58, 0, 2, 2);
-    ctx.fillRect(s.w * 0.62, 0, 2, 2);
+    // Ultra-detailed weapon hardpoints with geometric precision
+    ctx.fillStyle = '#451A03'; // Hardpoint shadows
+    ctx.fillRect(s.w * 0.585, -0.5, 2.5, 3);
+    ctx.fillRect(s.w * 0.62, -0.5, 2.5, 3);
+    ctx.fillRect(s.w * 0.655, -0.5, 2.5, 3);
+    
+    ctx.fillStyle = '#B45309'; // Primary hardpoints
+    ctx.fillRect(s.w * 0.59, 0, 2, 2);
+    ctx.fillRect(s.w * 0.625, 0, 2, 2);
     ctx.fillRect(s.w * 0.66, 0, 2, 2);
     
-    // Wing edge highlight
-    ctx.fillStyle = '#D97706';
-    ctx.fillRect(s.w * 0.56, 0, 12, 1);
+    // Hardpoint metallic highlights
+    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
+    ctx.fillRect(s.w * 0.59, 0, 2, 0.5);
+    ctx.fillRect(s.w * 0.625, 0, 2, 0.5);
+    ctx.fillRect(s.w * 0.66, 0, 2, 0.5);
     
-    // Lower wing assembly (mirrored)
+    // Wing edge ultra-highlight with shimmer
+    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
+    ctx.fillRect(s.w * 0.57, 0, 12, 1);
+    ctx.fillStyle = 'rgba(254, 243, 199, 0.8)';
+    ctx.fillRect(s.w * 0.57, 0, 12, 0.5);
+    
+    // Lower wing assembly (mirrored with enhanced detail)
+    ctx.fillStyle = '#291107';
+    ctx.fillRect(s.w * 0.54, s.h - 5, 16, 6);
+    ctx.fillStyle = '#451A03';
+    ctx.fillRect(s.w * 0.55, s.h - 4, 15, 5);
     ctx.fillStyle = '#7C2D12';
-    ctx.fillRect(s.w * 0.55, s.h - 4, 14, 4);
+    ctx.fillRect(s.w * 0.56, s.h - 3, 14, 4);
     
-    ctx.fillStyle = '#92400E';
-    ctx.fillRect(s.w * 0.56, s.h - 3, 12, 3);
+    const lowerWingGrd = ctx.createLinearGradient(s.w * 0.56, s.h - 3, s.w * 0.7, s.h);
+    lowerWingGrd.addColorStop(0, '#F59E0B');
+    lowerWingGrd.addColorStop(0.2, `rgba(217, 119, 6, ${timeShimmer})`);
+    lowerWingGrd.addColorStop(0.6, '#B45309');
+    lowerWingGrd.addColorStop(1, '#92400E');
+    ctx.fillStyle = lowerWingGrd;
+    ctx.fillRect(s.w * 0.57, s.h - 3, 12, 3);
+    
+    // Lower hardpoints
+    ctx.fillStyle = '#451A03';
+    ctx.fillRect(s.w * 0.585, s.h - 2.5, 2.5, 3);
+    ctx.fillRect(s.w * 0.62, s.h - 2.5, 2.5, 3);
+    ctx.fillRect(s.w * 0.655, s.h - 2.5, 2.5, 3);
     
     ctx.fillStyle = '#B45309';
-    ctx.fillRect(s.w * 0.58, s.h - 2, 2, 2);
-    ctx.fillRect(s.w * 0.62, s.h - 2, 2, 2);
+    ctx.fillRect(s.w * 0.59, s.h - 2, 2, 2);
+    ctx.fillRect(s.w * 0.625, s.h - 2, 2, 2);
     ctx.fillRect(s.w * 0.66, s.h - 2, 2, 2);
     
-    ctx.fillStyle = '#D97706';
-    ctx.fillRect(s.w * 0.56, s.h - 1, 12, 1);
+    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
+    ctx.fillRect(s.w * 0.59, s.h - 1.5, 2, 0.5);
+    ctx.fillRect(s.w * 0.625, s.h - 1.5, 2, 0.5);
+    ctx.fillRect(s.w * 0.66, s.h - 1.5, 2, 0.5);
     
-    // === ADVANCED LIGHTING AND ANTENNA DETAILS ===
+    ctx.fillStyle = `rgba(245, 158, 11, ${timeShimmer})`;
+    ctx.fillRect(s.w * 0.57, s.h - 1, 12, 1);
+    ctx.fillStyle = 'rgba(254, 243, 199, 0.8)';
+    ctx.fillRect(s.w * 0.57, s.h - 0.5, 12, 0.5);
     
-    // Navigation lights (enhanced flashing)
-    const wingFlash = 0.5 + 0.5 * Math.sin(s.wingFlicker);
-    const altFlash = 0.5 + 0.5 * Math.sin(s.wingFlicker + Math.PI);
+    // === HYPER-ADVANCED LIGHTING AND SENSOR SYSTEMS ===
     
-    // Primary wing lights
-    ctx.globalAlpha = wingFlash * 0.9;
-    ctx.fillStyle = '#DC2626'; // Red navigation light
-    ctx.fillRect(s.w * 0.68, 0, 3, 1);
-    ctx.fillStyle = '#059669'; // Green navigation light  
-    ctx.fillRect(s.w * 0.68, s.h - 1, 3, 1);
+    // Navigation lights with complex flashing patterns
+    const wingFlash = 0.3 + 0.7 * Math.sin(s.wingFlicker * 1.5);
+    const altFlash = 0.3 + 0.7 * Math.sin(s.wingFlicker * 1.2 + Math.PI);
+    const rapidFlash = 0.2 + 0.8 * Math.sin(s.wingFlicker * 3);
+    
+    // Primary wing navigation lights with halos
+    ctx.globalAlpha = wingFlash;
+    ctx.fillStyle = '#DC2626';
+    ctx.fillRect(s.w * 0.675, -0.5, 4, 2);
+    ctx.globalAlpha = wingFlash * 0.4;
+    ctx.fillRect(s.w * 0.67, -1, 5, 3);
+    ctx.globalAlpha = wingFlash;
+    ctx.fillStyle = '#059669';
+    ctx.fillRect(s.w * 0.675, s.h - 1.5, 4, 2);
+    ctx.globalAlpha = wingFlash * 0.4;
+    ctx.fillRect(s.w * 0.67, s.h - 2, 5, 3);
     ctx.globalAlpha = 1;
     
-    // Secondary strobe lights
-    ctx.globalAlpha = altFlash * 0.7;
+    // Secondary strobe systems
+    ctx.globalAlpha = altFlash;
     ctx.fillStyle = '#F59E0B';
-    ctx.fillRect(s.w * 0.72, 1, 1, 1);
-    ctx.fillRect(s.w * 0.72, s.h - 2, 1, 1);
+    ctx.fillRect(s.w * 0.72, 0.5, 2, 1);
+    ctx.fillRect(s.w * 0.72, s.h - 1.5, 2, 1);
     ctx.globalAlpha = 1;
     
-    // Communication antenna
+    // Rapid pulse beacons
+    ctx.globalAlpha = rapidFlash;
+    ctx.fillStyle = '#FEF3C7';
+    ctx.fillRect(s.w * 0.74, 1, 1, 0.5);
+    ctx.fillRect(s.w * 0.74, s.h - 1.5, 1, 0.5);
+    ctx.globalAlpha = 1;
+    
+    // Advanced communication antenna with multi-segment construction
     ctx.strokeStyle = '#A16207';
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(s.w * 0.3, s.h * 0.2);
-    ctx.lineTo(s.w * 0.28, s.h * 0.05);
-    ctx.lineTo(s.w * 0.32, s.h * 0.1);
+    ctx.lineTo(s.w * 0.275, s.h * 0.05);
+    ctx.lineTo(s.w * 0.32, s.h * 0.08);
+    ctx.lineTo(s.w * 0.285, s.h * 0.02);
     ctx.stroke();
     
-    // Antenna tip light
-    ctx.fillStyle = '#DC2626';
-    ctx.fillRect(s.w * 0.28, s.h * 0.05, 1, 1);
+    // Antenna segmentation details
+    ctx.strokeStyle = '#451A03';
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    for (let i = 0; i < 4; i++) {
+      const y = s.h * (0.05 + i * 0.035);
+      ctx.moveTo(s.w * 0.27, y);
+      ctx.lineTo(s.w * 0.29, y);
+    }
+    ctx.stroke();
     
-    // === ENGINE DETAILS AND VENTS ===
+    // Multi-frequency antenna tip array
+    ctx.fillStyle = `rgba(220, 38, 38, ${rapidFlash})`;
+    ctx.fillRect(s.w * 0.275, s.h * 0.02, 1.5, 1);
+    ctx.fillStyle = `rgba(245, 158, 11, ${altFlash})`;
+    ctx.fillRect(s.w * 0.285, s.h * 0.025, 1, 0.5);
     
-    // Enhanced engine vents with depth
+    // === ULTRA-SOPHISTICATED ENGINE AND EXHAUST SYSTEMS ===
+    
+    // Enhanced engine vents with complex internal structure
+    ctx.fillStyle = '#0A0300'; // Ultra-deep vent shadow
+    ctx.fillRect(-3, s.h * 0.24, 6, s.h * 0.22);
+    ctx.fillRect(-3, s.h * 0.54, 6, s.h * 0.22);
+    
     ctx.fillStyle = '#1C0A00'; // Deep vent shadow
     ctx.fillRect(-2, s.h * 0.25, 4, s.h * 0.2);
     ctx.fillRect(-2, s.h * 0.55, 4, s.h * 0.2);
@@ -1620,72 +1824,128 @@ function GameCanvas({
     ctx.fillRect(-1, s.h * 0.27, 2, s.h * 0.16);
     ctx.fillRect(-1, s.h * 0.57, 2, s.h * 0.16);
     
-    // Vent grilles
-    ctx.strokeStyle = '#7C2D12';
-    ctx.lineWidth = 0.5;
-    for (let i = 0; i < 3; i++) {
-      const y1 = s.h * 0.28 + i * 2;
-      const y2 = s.h * 0.58 + i * 2;
+    // Complex vent grille system with heat distortion simulation
+    ctx.strokeStyle = `rgba(124, 45, 18, ${timeShimmer})`;
+    ctx.lineWidth = 0.7;
+    for (let i = 0; i < 5; i++) {
+      const y1 = s.h * 0.28 + i * 1.8 + Math.sin(performance.now() * 0.005 + i) * 0.3;
+      const y2 = s.h * 0.58 + i * 1.8 + Math.sin(performance.now() * 0.005 + i) * 0.3;
       ctx.beginPath();
-      ctx.moveTo(-1, y1);
-      ctx.lineTo(1, y1);
-      ctx.moveTo(-1, y2);
-      ctx.lineTo(1, y2);
+      ctx.moveTo(-1.5, y1);
+      ctx.lineTo(1.5, y1);
+      ctx.moveTo(-1.5, y2);
+      ctx.lineTo(1.5, y2);
       ctx.stroke();
     }
     
-    // === HULL IDENTIFICATION AND DETAILING ===
+    // Engine vent heat glow effect
+    if (s.engineHeat > 0.3) {
+      ctx.globalAlpha = s.engineHeat * 0.6;
+      ctx.fillStyle = '#F59E0B';
+      ctx.fillRect(-1, s.h * 0.27, 2, s.h * 0.16);
+      ctx.fillRect(-1, s.h * 0.57, 2, s.h * 0.16);
+      ctx.globalAlpha = 1;
+    }
     
-    // Hull identification numbers
-    ctx.fillStyle = '#FEF3C7';
+    // === PREMIUM HULL IDENTIFICATION AND SOPHISTICATED DETAILING ===
+    
+    // Enhanced hull identification with multiple text elements
+    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
     ctx.font = '6px monospace';
-    ctx.fillText('HD-7', 4, s.h * 0.4);
+    ctx.fillText('HD-7', 3, s.h * 0.38);
+    ctx.font = '4px monospace';
+    ctx.fillText('MK-II', 3, s.h * 0.45);
+    ctx.fillText('2387', 3, s.h * 0.52);
     
-    // Additional hull paneling
-    ctx.strokeStyle = 'rgba(69, 26, 3, 0.5)';
-    ctx.lineWidth = 0.5;
+    // Ultra-sophisticated hull paneling with geometric precision
+    ctx.strokeStyle = 'rgba(69, 26, 3, 0.7)';
+    ctx.lineWidth = 0.6;
     ctx.beginPath();
-    // Diagonal support struts
-    ctx.moveTo(s.w * 0.15, 4);
-    ctx.lineTo(s.w * 0.25, s.h - 4);
-    ctx.moveTo(s.w * 0.75, 4);
-    ctx.lineTo(s.w * 0.85, s.h - 4);
+    // Complex diagonal support strut system
+    ctx.moveTo(s.w * 0.12, 3);
+    ctx.lineTo(s.w * 0.28, s.h - 5);
+    ctx.moveTo(s.w * 0.18, 3);
+    ctx.lineTo(s.w * 0.22, s.h - 5);
+    ctx.moveTo(s.w * 0.72, 3);
+    ctx.lineTo(s.w * 0.88, s.h - 5);
+    ctx.moveTo(s.w * 0.78, 3);
+    ctx.lineTo(s.w * 0.82, s.h - 5);
+    // Cross-bracing elements
+    ctx.moveTo(s.w * 0.15, s.h * 0.6);
+    ctx.lineTo(s.w * 0.25, s.h * 0.4);
+    ctx.moveTo(s.w * 0.75, s.h * 0.6);
+    ctx.lineTo(s.w * 0.85, s.h * 0.4);
     ctx.stroke();
     
-    // === HERITAGE STRIPE SYSTEM (ENHANCED) ===
+    // === ULTRA-PREMIUM HERITAGE STRIPE SYSTEM ===
     
-    // Primary heritage stripe with gradient
-    const stripeGrd = ctx.createLinearGradient(4, s.h - 6, s.w - 8, s.h - 2);
-    stripeGrd.addColorStop(0, '#D97706');
-    stripeGrd.addColorStop(0.5, '#F59E0B');
-    stripeGrd.addColorStop(1, '#D97706');
+    // Multi-layered heritage stripe with complex gradient and shimmer
+    const stripeGrd = ctx.createLinearGradient(3, s.h - 8, s.w - 6, s.h - 1);
+    stripeGrd.addColorStop(0, '#C8822A');
+    stripeGrd.addColorStop(0.15, '#D97706');
+    stripeGrd.addColorStop(0.35, `rgba(245, 158, 11, ${timeShimmer})`);
+    stripeGrd.addColorStop(0.65, '#F59E0B');
+    stripeGrd.addColorStop(0.85, '#D97706');
+    stripeGrd.addColorStop(1, '#A16207');
     ctx.fillStyle = stripeGrd;
-    ctx.fillRect(4, s.h - 6, s.w - 8, 4);
+    ctx.fillRect(3, s.h - 8, s.w - 6, 6);
     
-    // Stripe highlight
-    ctx.fillStyle = '#FEF3C7';
-    ctx.fillRect(5, s.h - 5, s.w - 10, 1);
+    // Primary stripe ultra-highlight with dynamic intensity
+    ctx.fillStyle = `rgba(254, 243, 199, ${timeShimmer})`;
+    ctx.fillRect(4, s.h - 7, s.w - 8, 1.5);
     
-    // Stripe shadow
-    ctx.fillStyle = '#92400E';
-    ctx.fillRect(5, s.h - 3, s.w - 10, 1);
+    // Stripe geometric pattern overlay
+    ctx.fillStyle = 'rgba(69, 26, 3, 0.3)';
+    for (let i = 6; i < s.w - 6; i += 8) {
+      ctx.fillRect(i, s.h - 6, 2, 2);
+    }
     
-    // Secondary accent stripes
-    ctx.fillStyle = '#A16207';
-    ctx.fillRect(6, 5, s.w - 12, 1);
-    ctx.fillRect(6, s.h - 8, s.w - 12, 1);
-    
-    // === WEAPON SYSTEM INDICATORS ===
-    
-    // Weapon hardpoint indicators
+    // Secondary stripe shadow with depth
     ctx.fillStyle = '#7C2D12';
-    ctx.fillRect(s.w * 0.85, s.h * 0.3, 3, 2);
-    ctx.fillRect(s.w * 0.85, s.h * 0.68, 3, 2);
+    ctx.fillRect(4, s.h - 3, s.w - 8, 1);
+    ctx.fillStyle = '#451A03';
+    ctx.fillRect(4, s.h - 2, s.w - 8, 1);
     
-    // Weapon status lights
-    ctx.fillStyle = isMoving ? '#059669' : '#92400E'; // Green when active
-    ctx.fillRect(s.w * 0.86, s.h * 0.31, 1, 0.5);
-    ctx.fillRect(s.w * 0.86, s.h * 0.69, 1, 0.5);
+    // Multiple accent stripe system
+    ctx.fillStyle = `rgba(161, 98, 7, ${timeShimmer})`;
+    ctx.fillRect(5, 4, s.w - 10, 1.5);
+    ctx.fillRect(5, s.h - 10, s.w - 10, 1.5);
+    
+    // Micro accent details
+    ctx.fillStyle = 'rgba(254, 243, 199, 0.6)';
+    ctx.fillRect(6, 4.5, s.w - 12, 0.5);
+    ctx.fillRect(6, s.h - 9.5, s.w - 12, 0.5);
+    
+    // === ADVANCED WEAPON SYSTEM INDICATORS ===
+    
+    // Weapon hardpoint ultra-detailed indicators
+    ctx.fillStyle = '#291107'; // Deep hardpoint shadow
+    ctx.fillRect(s.w * 0.84, s.h * 0.28, 5, 4);
+    ctx.fillRect(s.w * 0.84, s.h * 0.68, 5, 4);
+    
+    ctx.fillStyle = '#7C2D12'; // Primary hardpoint
+    ctx.fillRect(s.w * 0.85, s.h * 0.29, 3, 3);
+    ctx.fillRect(s.w * 0.85, s.h * 0.69, 3, 3);
+    
+    // Hardpoint detailed construction
+    ctx.fillStyle = '#B45309';
+    ctx.fillRect(s.w * 0.855, s.h * 0.295, 2, 2);
+    ctx.fillRect(s.w * 0.855, s.h * 0.695, 2, 2);
+    
+    // Multi-status weapon system lights with complex patterns
+    const weaponFlash = 0.4 + 0.6 * Math.sin(s.wingFlicker * 2.1);
+    ctx.globalAlpha = weaponFlash;
+    ctx.fillStyle = isMoving ? '#059669' : '#DC2626'; // Green when active, red when inactive
+    ctx.fillRect(s.w * 0.86, s.h * 0.3, 1.5, 1);
+    ctx.fillRect(s.w * 0.86, s.h * 0.7, 1.5, 1);
+    ctx.globalAlpha = 1;
+    
+    // Secondary weapon status indicators
+    ctx.globalAlpha = altFlash * 0.8;
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillRect(s.w * 0.862, s.h * 0.305, 0.5, 0.5);
+    ctx.fillRect(s.w * 0.862, s.h * 0.705, 0.5, 0.5);
+    ctx.globalAlpha = 1;
     
     ctx.restore();
   }
