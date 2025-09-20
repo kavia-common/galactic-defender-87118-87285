@@ -72,6 +72,28 @@ function GameCanvas({
     flashes: [], // screen flash effects
     shockwaves: [], // expanding ring effects
 
+    // weather and lighting system
+    weather: {
+      // Time of day system (0 = dawn, 0.25 = day, 0.5 = dusk, 0.75 = night, 1 = dawn)
+      timeOfDay: 0.25, // start at day
+      timeSpeed: 0.00008, // slow progression (full cycle ~12.5 minutes)
+      
+      // Lightning system
+      lightningTimer: 0,
+      lightningInterval: 8000 + Math.random() * 12000, // 8-20 seconds between strikes
+      activeLightning: null,
+      
+      // Fog system
+      fogLayers: [],
+      fogDensity: 0.3 + Math.random() * 0.4,
+      fogSpeed: 1.2 + Math.random() * 0.8,
+      
+      // Atmospheric effects
+      rainDrops: [],
+      windStrength: 0.5 + Math.random() * 0.5,
+      weatherIntensity: 0.6 + Math.random() * 0.4,
+    },
+
     // level progression
     levelTimer: 0,
     levelDuration: 20_000, // ms per level section
@@ -137,6 +159,7 @@ function GameCanvas({
     seedClouds();
     seedStars();
     seedNebulae();
+    initializeWeatherSystems();
   }
 
   function buildTerrain() {
@@ -254,6 +277,34 @@ function GameCanvas({
     }
     st.nebulae = nebulae;
     st.nebulaeOffset = 0;
+  }
+
+  function initializeWeatherSystems() {
+    const st = stateRef.current;
+    
+    // Initialize fog layers with different depths and movement speeds
+    st.weather.fogLayers = [];
+    const fogLayerCount = 3 + Math.floor(Math.random() * 3); // 3-5 fog layers
+    for (let i = 0; i < fogLayerCount; i++) {
+      const depth = i / fogLayerCount; // 0 (front) to 1 (back)
+      const layer = {
+        x: Math.random() * st.width * 2 - st.width,
+        y: st.height * (0.3 + Math.random() * 0.4), // mid-screen fog
+        width: st.width * (1.5 + Math.random() * 2), // varied widths
+        height: 60 + Math.random() * 120,
+        vx: -(10 + Math.random() * 20) * (1 - depth * 0.7), // faster in front
+        opacity: (0.1 + Math.random() * 0.2) * st.weather.fogDensity,
+        depth: depth,
+        wavePhase: Math.random() * Math.PI * 2,
+        waveSpeed: 0.5 + Math.random() * 1.0,
+        waveAmplitude: 8 + Math.random() * 15,
+      };
+      st.weather.fogLayers.push(layer);
+    }
+    
+    // Reset weather timers
+    st.weather.lightningTimer = 0;
+    st.weather.lightningInterval = 8000 + Math.random() * 12000;
   }
 
   function shoot() {
@@ -637,13 +688,18 @@ function GameCanvas({
       onLevelProgress && onLevelProgress();
     }
 
+    // Update weather and lighting systems
+    updateWeatherSystems(dt);
+
     // Draw scene in correct depth order
-    drawSky(ctx);           // background gradient
+    drawSky(ctx);           // background gradient with time-of-day coloring
     drawStars(ctx);         // distant stars (deepest)
     drawNebulae(ctx);       // nebulae behind clouds
     drawClouds(ctx);        // clouds in the sky
+    drawFogLayers(ctx, 'back'); // background fog layers
     drawMountains(ctx);     // distant mountains
     drawHills(ctx);         // midground rolling hills
+    drawFogLayers(ctx, 'mid'); // midground fog layers
     drawTerrain(ctx);       // playable ground (foreground)
 
     // Draw rockets with enhanced visuals
@@ -766,6 +822,9 @@ function GameCanvas({
     // Draw ship with enhanced visuals
     drawEnhancedShip(ctx, st.ship, dt);
 
+    // Draw foreground fog layers
+    drawFogLayers(ctx, 'front');
+
     // Restore camera transform
     ctx.restore();
 
@@ -783,6 +842,12 @@ function GameCanvas({
     });
     st.flashes = st.flashes.filter(f => f.age < f.life);
 
+    // Draw lightning effects (above everything else)
+    drawLightningEffects(ctx, dt);
+
+    // Apply time-of-day lighting overlay
+    drawTimeOfDayOverlay(ctx);
+
     if (running) {
       requestAnimationFrame(loop);
     }
@@ -795,17 +860,129 @@ function GameCanvas({
     return st.terrain[idx]?.y ?? st.height * 0.85;
   }
 
+  // Weather System Updates
+  
+  function updateWeatherSystems(dt) {
+    const st = stateRef.current;
+    const weather = st.weather;
+    
+    // Update time of day (full cycle in ~12.5 minutes)
+    weather.timeOfDay += weather.timeSpeed * dt;
+    if (weather.timeOfDay > 1) weather.timeOfDay -= 1;
+    
+    // Update lightning system
+    weather.lightningTimer += dt * 1000;
+    if (weather.lightningTimer >= weather.lightningInterval) {
+      triggerLightning();
+      weather.lightningTimer = 0;
+      weather.lightningInterval = 8000 + Math.random() * 12000; // Next strike in 8-20 seconds
+    }
+    
+    // Update active lightning
+    if (weather.activeLightning) {
+      weather.activeLightning.age += dt * 1000;
+      if (weather.activeLightning.age >= weather.activeLightning.duration) {
+        weather.activeLightning = null;
+      }
+    }
+    
+    // Update fog layers
+    weather.fogLayers.forEach(fog => {
+      fog.x += fog.vx * dt;
+      fog.wavePhase += fog.waveSpeed * dt;
+      
+      // Wrap fog around screen
+      if (fog.x + fog.width < -st.width * 0.5) {
+        fog.x = st.width + Math.random() * st.width;
+      }
+    });
+    
+    // Slight variations in weather intensity
+    weather.weatherIntensity += (Math.random() - 0.5) * dt * 0.1;
+    weather.weatherIntensity = Math.max(0.2, Math.min(1.0, weather.weatherIntensity));
+  }
+  
+  function triggerLightning() {
+    const st = stateRef.current;
+    
+    // Create lightning flash effect
+    st.weather.activeLightning = {
+      age: 0,
+      duration: 150 + Math.random() * 100, // 150-250ms flash
+      intensity: 0.6 + Math.random() * 0.4,
+      x: Math.random() * st.width,
+      y: Math.random() * st.height * 0.4, // Upper portion of screen
+      branches: Math.floor(2 + Math.random() * 4), // 2-5 lightning branches
+    };
+    
+    // Add screen flash for lightning
+    st.flashes.push({
+      alpha: 0.3 + Math.random() * 0.2,
+      life: 100 + Math.random() * 50,
+      age: 0,
+      color: '#FEF3C7' // Heritage cream lightning flash
+    });
+    
+    // Optional: trigger mild screen shake for dramatic effect
+    triggerScreenShake(3, 200);
+  }
+
   // Visuals
 
   function drawSky(ctx) {
     const st = stateRef.current;
+    const timeOfDay = st.weather.timeOfDay;
+    
+    // Calculate sky colors based on time of day
+    let topColor, midColor, bottomColor;
+    
+    if (timeOfDay < 0.125) { // Dawn (0-0.125)
+      const t = timeOfDay / 0.125;
+      topColor = lerpColor('#2D1B69', '#F7F2E6', t); // Deep night to light cream
+      midColor = lerpColor('#4C1D95', '#F3E9D2', t);
+      bottomColor = lerpColor('#5B21B6', '#FDF6E3', t);
+    } else if (timeOfDay < 0.375) { // Day (0.125-0.375)
+      topColor = '#F7F2E6'; // Light heritage cream
+      midColor = '#F3E9D2'; // Medium heritage cream
+      bottomColor = '#FDF6E3'; // Light heritage beige
+    } else if (timeOfDay < 0.625) { // Dusk (0.375-0.625)
+      const t = (timeOfDay - 0.375) / 0.25;
+      topColor = lerpColor('#F7F2E6', '#E6B17A', t); // Cream to heritage amber
+      midColor = lerpColor('#F3E9D2', '#D2B48C', t); // Cream to tan
+      bottomColor = lerpColor('#FDF6E3', '#DCC4A0', t); // Beige to darker beige
+    } else { // Night (0.625-1.0)
+      const t = (timeOfDay - 0.625) / 0.375;
+      topColor = lerpColor('#E6B17A', '#2D1B69', t); // Amber to deep night
+      midColor = lerpColor('#D2B48C', '#4C1D95', t);
+      bottomColor = lerpColor('#DCC4A0', '#5B21B6', t);
+    }
+    
     const grd = ctx.createLinearGradient(0, 0, 0, st.height);
-    // Heritage Brown compatible sky tones
-    grd.addColorStop(0, '#F7F2E6');
-    grd.addColorStop(0.6, '#F3E9D2');
-    grd.addColorStop(1, '#FDF6E3');
+    grd.addColorStop(0, topColor);
+    grd.addColorStop(0.6, midColor);
+    grd.addColorStop(1, bottomColor);
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, st.width, st.height);
+  }
+  
+  function lerpColor(color1, color2, t) {
+    // Helper function to interpolate between two hex colors
+    const hex1 = parseInt(color1.substring(1), 16);
+    const hex2 = parseInt(color2.substring(1), 16);
+    
+    const r1 = (hex1 >> 16) & 255;
+    const g1 = (hex1 >> 8) & 255;
+    const b1 = hex1 & 255;
+    
+    const r2 = (hex2 >> 16) & 255;
+    const g2 = (hex2 >> 8) & 255;
+    const b2 = hex2 & 255;
+    
+    const r = Math.round(r1 + (r2 - r1) * t);
+    const g = Math.round(g1 + (g2 - g1) * t);
+    const b = Math.round(b1 + (b2 - b1) * t);
+    
+    return `#${(r << 16 | g << 8 | b).toString(16).padStart(6, '0')}`;
   }
 
   function drawClouds(ctx) {
@@ -999,6 +1176,174 @@ function GameCanvas({
       ctx.stroke();
     }
     ctx.restore();
+  }
+  
+  function drawFogLayers(ctx, depthCategory) {
+    const st = stateRef.current;
+    const weather = st.weather;
+    
+    ctx.save();
+    
+    weather.fogLayers.forEach(fog => {
+      // Filter fog layers by depth category
+      const shouldDraw = 
+        (depthCategory === 'back' && fog.depth > 0.66) ||
+        (depthCategory === 'mid' && fog.depth > 0.33 && fog.depth <= 0.66) ||
+        (depthCategory === 'front' && fog.depth <= 0.33);
+      
+      if (!shouldDraw) return;
+      
+      // Skip fog outside visible area
+      if (fog.x + fog.width < 0 || fog.x > st.width) return;
+      
+      // Apply wave motion to fog position
+      const waveOffset = Math.sin(fog.wavePhase) * fog.waveAmplitude;
+      const fogY = fog.y + waveOffset;
+      
+      // Create fog gradient with Heritage Brown theme
+      const alpha = fog.opacity * weather.weatherIntensity;
+      ctx.globalAlpha = alpha;
+      
+      // Heritage Brown themed fog colors
+      const fogColors = [
+        '#E8DCC6', // Light heritage cream
+        '#DDD0B4', // Medium heritage beige  
+        '#D4C5A2', // Darker heritage tan
+      ];
+      
+      const colorIndex = Math.floor(fog.depth * fogColors.length);
+      const baseColor = fogColors[Math.min(colorIndex, fogColors.length - 1)];
+      
+      // Create radial gradient for organic fog shape
+      const centerX = fog.x + fog.width * 0.5;
+      const grd = ctx.createRadialGradient(
+        centerX, fogY, 0,
+        centerX, fogY, fog.width * 0.6
+      );
+      grd.addColorStop(0, baseColor + 'C0'); // Semi-transparent center
+      grd.addColorStop(0.6, baseColor + '80'); // More transparent
+      grd.addColorStop(1, baseColor + '00'); // Fully transparent edges
+      
+      ctx.fillStyle = grd;
+      
+      // Draw organic fog shape with multiple overlapping ellipses
+      ctx.beginPath();
+      for (let i = 0; i < 3; i++) {
+        const offsetX = Math.sin(fog.wavePhase + i * 0.7) * 20;
+        const offsetY = Math.cos(fog.wavePhase + i * 0.9) * 10;
+        const radiusX = fog.width * (0.3 + i * 0.1);
+        const radiusY = fog.height * (0.4 + i * 0.05);
+        
+        ctx.save();
+        ctx.translate(centerX + offsetX, fogY + offsetY);
+        ctx.scale(1, 0.6); // Flatten vertically for natural fog look
+        ctx.arc(0, 0, radiusX, 0, Math.PI * 2);
+        ctx.restore();
+      }
+      ctx.fill();
+    });
+    
+    ctx.globalAlpha = 1;
+    ctx.restore();
+  }
+  
+  function drawLightningEffects(ctx, dt) {
+    const st = stateRef.current;
+    const lightning = st.weather.activeLightning;
+    
+    if (!lightning) return;
+    
+    ctx.save();
+    
+    // Calculate lightning intensity with flickering
+    const progress = lightning.age / lightning.duration;
+    const baseIntensity = lightning.intensity * (1 - progress);
+    const flicker = 0.7 + 0.3 * Math.sin(lightning.age * 0.05);
+    const intensity = baseIntensity * flicker;
+    
+    if (intensity > 0.05) {
+      ctx.globalAlpha = intensity;
+      ctx.strokeStyle = '#FEF3C7'; // Heritage cream lightning
+      ctx.shadowColor = '#F59E0B'; // Heritage orange glow
+      ctx.shadowBlur = 20;
+      
+      // Draw main lightning bolt
+      drawLightningBolt(ctx, lightning.x, 0, lightning.x + (Math.random() - 0.5) * 100, lightning.y);
+      
+      // Draw branching bolts
+      for (let i = 0; i < lightning.branches; i++) {
+        const branchStart = lightning.y * (0.3 + Math.random() * 0.4);
+        const branchEndX = lightning.x + (Math.random() - 0.5) * 200;
+        const branchEndY = lightning.y + Math.random() * 100;
+        
+        ctx.globalAlpha = intensity * (0.4 + Math.random() * 0.3);
+        drawLightningBolt(ctx, lightning.x, branchStart, branchEndX, branchEndY);
+      }
+    }
+    
+    ctx.restore();
+  }
+  
+  function drawLightningBolt(ctx, startX, startY, endX, endY) {
+    const segments = 8 + Math.floor(Math.random() * 6); // 8-13 segments
+    const jaggedness = 0.4; // How jagged the lightning appears
+    
+    ctx.beginPath();
+    ctx.lineWidth = 2 + Math.random() * 2;
+    ctx.lineCap = 'round';
+    
+    let currentX = startX;
+    let currentY = startY;
+    
+    ctx.moveTo(currentX, currentY);
+    
+    for (let i = 1; i <= segments; i++) {
+      const progress = i / segments;
+      const targetX = startX + (endX - startX) * progress;
+      const targetY = startY + (endY - startY) * progress;
+      
+      // Add random offset for jaggedness
+      const offsetX = (Math.random() - 0.5) * jaggedness * 100 * (1 - Math.abs(progress - 0.5) * 2);
+      const offsetY = (Math.random() - 0.5) * jaggedness * 50;
+      
+      currentX = targetX + offsetX;
+      currentY = targetY + offsetY;
+      
+      ctx.lineTo(currentX, currentY);
+    }
+    
+    ctx.stroke();
+  }
+  
+  function drawTimeOfDayOverlay(ctx) {
+    const st = stateRef.current;
+    const timeOfDay = st.weather.timeOfDay;
+    
+    // Apply subtle time-of-day tinting
+    let overlayColor = null;
+    let overlayAlpha = 0;
+    
+    if (timeOfDay < 0.125) { // Dawn
+      overlayColor = '#FEF3C7'; // Warm heritage cream
+      overlayAlpha = 0.1 * (1 - timeOfDay / 0.125);
+    } else if (timeOfDay >= 0.375 && timeOfDay < 0.625) { // Dusk
+      const t = (timeOfDay - 0.375) / 0.25;
+      overlayColor = '#F59E0B'; // Heritage orange
+      overlayAlpha = 0.15 * t;
+    } else if (timeOfDay >= 0.625) { // Night
+      const t = (timeOfDay - 0.625) / 0.375;
+      overlayColor = '#1E3A8A'; // Deep blue night
+      overlayAlpha = 0.3 * t;
+    }
+    
+    if (overlayColor && overlayAlpha > 0.01) {
+      ctx.save();
+      ctx.globalAlpha = overlayAlpha;
+      ctx.fillStyle = overlayColor;
+      ctx.globalCompositeOperation = 'overlay';
+      ctx.fillRect(0, 0, st.width, st.height);
+      ctx.restore();
+    }
   }
 
   function drawEnhancedShip(ctx, s, dt) {
