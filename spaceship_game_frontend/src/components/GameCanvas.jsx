@@ -57,7 +57,12 @@ function GameCanvas({
     clouds: [],
 
     // entities
-    ship: { x: 120, y: 360, w: 38, h: 22, vx: 0, vy: 0, speed: 280, damageFlash: 0 },
+    ship: { 
+      x: 120, y: 360, w: 38, h: 22, vx: 0, vy: 0, speed: 280, damageFlash: 0,
+      thrusterTime: 0, // for animated thruster flames
+      engineHeat: 0, // engine heat effect
+      wingFlicker: 0 // wing light flicker
+    },
     bullets: [],
     bombs: [],
     rockets: [],
@@ -302,6 +307,10 @@ function GameCanvas({
         w: 8,
         h: 18,
         active: false, // becomes active once above ground a bit
+        exhaustTime: 0, // for animated exhaust flames
+        exhaustIntensity: 0.5 + Math.random() * 0.5, // individual exhaust intensity
+        wobble: Math.random() * Math.PI * 2, // rocket wobble phase
+        launched: false // tracks if rocket has started moving
       });
     }
   }
@@ -507,6 +516,13 @@ function GameCanvas({
     const groundYAtShip = groundYAt(st.ship.x);
     st.ship.y = Math.max(40, Math.min(groundYAtShip - st.ship.h - 10, st.ship.y));
 
+    // Update ship animation properties
+    st.ship.thrusterTime += dt * 8; // fast thruster flicker
+    st.ship.wingFlicker += dt * 6; // wing light flicker
+    const isMoving = Math.abs(st.ship.vx) > 50 || Math.abs(st.ship.vy) > 50;
+    st.ship.engineHeat = Math.max(0, st.ship.engineHeat + (isMoving ? dt * 3 : -dt * 2));
+    st.ship.engineHeat = Math.min(1, st.ship.engineHeat);
+
     // Update ship damage flash
     if (st.ship.damageFlash > 0) {
       st.ship.damageFlash -= dt * 1000;
@@ -523,6 +539,28 @@ function GameCanvas({
       r.y += r.vy * dt;
       r.vy += g * dt * 0.35; // simple gravity after launch
       if (!r.active && r.y < groundYAt(r.x) - 30) r.active = true;
+      
+      // Update rocket animation properties
+      r.exhaustTime += dt * 12; // fast exhaust flicker
+      r.wobble += dt * 3; // subtle wobble during flight
+      if (r.vy < 0) r.launched = true; // rocket is launching upward
+      
+      // Create exhaust particles for active rockets
+      if (r.launched && r.active && Math.random() < 0.3) {
+        const exhaustX = r.x + r.w * 0.5;
+        const exhaustY = r.y + r.h;
+        st.particles.push({
+          x: exhaustX + (Math.random() - 0.5) * 2,
+          y: exhaustY + Math.random() * 3,
+          vx: (Math.random() - 0.5) * 30,
+          vy: 80 + Math.random() * 40,
+          life: 300 + Math.random() * 200,
+          age: 0,
+          size: 1 + Math.random() * 2,
+          type: 'rocket_exhaust',
+          color: ['#F59E0B', '#FEF3C7', '#D97706'][Math.floor(Math.random() * 3)]
+        });
+      }
     });
     st.rockets = st.rockets.filter(r => r.x > -60 && r.y < st.height + 60);
 
@@ -608,12 +646,9 @@ function GameCanvas({
     drawHills(ctx);         // midground rolling hills
     drawTerrain(ctx);       // playable ground (foreground)
 
-    // Draw rockets
+    // Draw rockets with enhanced visuals
     st.rockets.forEach(r => {
-      ctx.save();
-      ctx.fillStyle = r.active ? '#92400E' : '#B45309'; // Heritage Browns
-      ctx.fillRect(r.x, r.y, r.w, r.h);
-      ctx.restore();
+      drawRocket(ctx, r);
     });
 
     // Draw bullets
@@ -650,6 +685,14 @@ function GameCanvas({
         p.vx *= 0.98; // debris maintains momentum longer
         p.vy *= 0.98;
         p.vy += 120 * dt; // debris falls faster
+      } else if (p.type === 'rocket_exhaust') {
+        p.vx *= 0.90; // exhaust spreads and slows
+        p.vy *= 0.94;
+        p.vy += 60 * dt; // exhaust falls with some resistance
+      } else if (p.type === 'thruster_flame') {
+        p.vx *= 0.88; // thruster flames spread quickly
+        p.vy *= 0.88;
+        p.vy += 30 * dt; // slight downward drift
       } else {
         // Legacy particle behavior
         p.vx *= 0.98; 
@@ -679,6 +722,22 @@ function GameCanvas({
         ctx.beginPath();
         ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
         ctx.fill();
+      } else if (p.type === 'rocket_exhaust') {
+        // Draw rocket exhaust as small oval flames
+        ctx.save();
+        ctx.scale(1, 1.5); // stretch vertically for flame shape
+        ctx.beginPath();
+        ctx.arc(p.x, p.y / 1.5, size * 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (p.type === 'thruster_flame') {
+        // Draw thruster flames as elongated particles
+        ctx.save();
+        ctx.scale(0.7, 1.8); // stretch for thruster flame
+        ctx.beginPath();
+        ctx.arc(p.x / 0.7, p.y / 1.8, size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
       } else {
         // Draw debris as rectangles
         ctx.fillRect(p.x - size/2, p.y - size/2, size, size);
@@ -704,8 +763,8 @@ function GameCanvas({
     });
     st.shockwaves = st.shockwaves.filter(s => s.age < s.life);
 
-    // Draw ship
-    drawShip(ctx, st.ship);
+    // Draw ship with enhanced visuals
+    drawEnhancedShip(ctx, st.ship, dt);
 
     // Restore camera transform
     ctx.restore();
@@ -942,49 +1001,286 @@ function GameCanvas({
     ctx.restore();
   }
 
-  function drawShip(ctx, s) {
+  function drawEnhancedShip(ctx, s, dt) {
+    const st = stateRef.current;
+    
     ctx.save();
     ctx.translate(s.x, s.y);
     
     // Apply damage flash effect
     if (s.damageFlash > 0) {
-      const flashIntensity = (Math.sin(s.damageFlash * 0.02) + 1) * 0.5; // Oscillating flash
+      const flashIntensity = (Math.sin(s.damageFlash * 0.02) + 1) * 0.5;
       ctx.globalAlpha = 0.7 + flashIntensity * 0.3;
-      // Red tint when damaged
       ctx.fillStyle = '#DC2626';
       ctx.fillRect(-2, -2, s.w + 4, s.h + 4);
       ctx.globalAlpha = 1;
     }
     
-    // body
-    ctx.fillStyle = '#92400E';
+    // Enhanced thruster flames when moving
+    const isMoving = Math.abs(s.vx) > 50 || Math.abs(s.vy) > 50;
+    if (isMoving || s.engineHeat > 0.1) {
+      drawThrusterFlames(ctx, s);
+      
+      // Create thruster particles
+      if (Math.random() < 0.4) {
+        const thrusterX = s.x - 8 + Math.random() * 4;
+        const thrusterY = s.y + s.h * 0.5 + (Math.random() - 0.5) * s.h * 0.3;
+        st.particles.push({
+          x: thrusterX,
+          y: thrusterY,
+          vx: -120 - Math.random() * 80,
+          vy: (Math.random() - 0.5) * 40,
+          life: 200 + Math.random() * 150,
+          age: 0,
+          size: 1 + Math.random() * 2,
+          type: 'thruster_flame',
+          color: ['#F59E0B', '#FEF3C7', '#D97706'][Math.floor(Math.random() * 3)]
+        });
+      }
+    }
+    
+    // Main ship body with gradient
+    const bodyGrd = ctx.createLinearGradient(0, 0, s.w, 0);
+    bodyGrd.addColorStop(0, '#92400E');
+    bodyGrd.addColorStop(0.6, '#B45309');
+    bodyGrd.addColorStop(1, '#92400E');
+    ctx.fillStyle = bodyGrd;
     ctx.fillRect(0, 0, s.w, s.h);
-    // nose
+    
+    // Ship outline for definition
+    ctx.strokeStyle = '#7C2D12';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(0, 0, s.w, s.h);
+    
+    // Enhanced nose cone with multi-part design
+    ctx.fillStyle = '#B45309';
     ctx.beginPath();
     ctx.moveTo(s.w, s.h / 2);
     ctx.lineTo(s.w + 10, s.h / 2 - 5);
+    ctx.lineTo(s.w + 12, s.h / 2 - 3);
+    ctx.lineTo(s.w + 12, s.h / 2 + 3);
     ctx.lineTo(s.w + 10, s.h / 2 + 5);
     ctx.closePath();
-    ctx.fillStyle = '#B45309';
     ctx.fill();
-    // canopy
-    ctx.fillStyle = '#FEF3C7';
-    ctx.fillRect(s.w * 0.4, 3, 10, s.h - 6);
-    // stripe
-    ctx.fillStyle = '#F59E0B';
-    ctx.fillRect(4, s.h - 4, s.w - 8, 3);
     
-    // Add engine trail when moving
-    if (Math.abs(s.vx) > 50 || Math.abs(s.vy) > 50) {
-      ctx.globalAlpha = 0.6;
-      ctx.fillStyle = '#F59E0B';
-      ctx.fillRect(-8, s.h * 0.3, 6, s.h * 0.4);
-      ctx.fillStyle = '#FEF3C7';
-      ctx.fillRect(-6, s.h * 0.4, 4, s.h * 0.2);
+    // Nose tip highlight
+    ctx.fillStyle = '#D97706';
+    ctx.beginPath();
+    ctx.moveTo(s.w + 10, s.h / 2 - 3);
+    ctx.lineTo(s.w + 12, s.h / 2 - 2);
+    ctx.lineTo(s.w + 12, s.h / 2 + 2);
+    ctx.lineTo(s.w + 10, s.h / 2 + 3);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Enhanced canopy with reflection
+    const canopyGrd = ctx.createLinearGradient(s.w * 0.4, 3, s.w * 0.4 + 10, s.h - 6);
+    canopyGrd.addColorStop(0, '#FEF3C7');
+    canopyGrd.addColorStop(0.3, '#F3E9D2');
+    canopyGrd.addColorStop(1, '#E6D5B0');
+    ctx.fillStyle = canopyGrd;
+    ctx.fillRect(s.w * 0.4, 3, 10, s.h - 6);
+    
+    // Canopy reflection highlight
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.fillRect(s.w * 0.4 + 1, 4, 3, s.h - 8);
+    
+    // Wing details
+    ctx.fillStyle = '#7C2D12';
+    ctx.fillRect(s.w * 0.6, 1, 8, 2); // top wing detail
+    ctx.fillRect(s.w * 0.6, s.h - 3, 8, 2); // bottom wing detail
+    
+    // Flashing wing lights
+    const wingFlash = 0.5 + 0.5 * Math.sin(s.wingFlicker);
+    ctx.globalAlpha = wingFlash * 0.8;
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillRect(s.w * 0.7, 0, 2, 1); // top wing light
+    ctx.fillRect(s.w * 0.7, s.h - 1, 2, 1); // bottom wing light
+    ctx.globalAlpha = 1;
+    
+    // Engine vents
+    ctx.fillStyle = '#451A03';
+    ctx.fillRect(-1, s.h * 0.3, 2, s.h * 0.15);
+    ctx.fillRect(-1, s.h * 0.55, 2, s.h * 0.15);
+    
+    // Heritage stripe pattern
+    ctx.fillStyle = '#F59E0B';
+    ctx.fillRect(4, s.h - 4, s.w - 8, 2);
+    ctx.fillStyle = '#FEF3C7';
+    ctx.fillRect(6, s.h - 3, s.w - 12, 1);
+    
+    ctx.restore();
+  }
+  
+  function drawThrusterFlames(ctx, s) {
+    // Animated thruster flames with Heritage Brown theme
+    const flameIntensity = s.engineHeat;
+    const flameFlicker = 0.7 + 0.3 * Math.sin(s.thrusterTime);
+    
+    // Main thruster flame
+    const flameLength = 12 + flameIntensity * 8;
+    const flameGrd = ctx.createLinearGradient(-flameLength, s.h * 0.5, 0, s.h * 0.5);
+    flameGrd.addColorStop(0, 'rgba(254, 243, 199, 0)'); // transparent cream
+    flameGrd.addColorStop(0.3, 'rgba(245, 158, 11, 0.8)'); // Heritage orange
+    flameGrd.addColorStop(0.7, 'rgba(180, 83, 9, 0.9)'); // Heritage brown
+    flameGrd.addColorStop(1, 'rgba(146, 64, 14, 1)'); // Heritage primary
+    
+    ctx.globalAlpha = flameIntensity * flameFlicker;
+    ctx.fillStyle = flameGrd;
+    
+    // Primary thruster flame shape
+    ctx.beginPath();
+    ctx.moveTo(0, s.h * 0.35);
+    ctx.quadraticCurveTo(-flameLength * 0.6, s.h * 0.3, -flameLength, s.h * 0.5);
+    ctx.quadraticCurveTo(-flameLength * 0.6, s.h * 0.7, 0, s.h * 0.65);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Secondary thruster flames for more detail
+    ctx.globalAlpha = flameIntensity * flameFlicker * 0.7;
+    ctx.fillStyle = '#FEF3C7';
+    
+    // Upper mini flame
+    ctx.beginPath();
+    ctx.moveTo(-1, s.h * 0.37);
+    ctx.quadraticCurveTo(-flameLength * 0.4, s.h * 0.35, -flameLength * 0.6, s.h * 0.45);
+    ctx.quadraticCurveTo(-flameLength * 0.3, s.h * 0.4, -1, s.h * 0.42);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Lower mini flame
+    ctx.beginPath();
+    ctx.moveTo(-1, s.h * 0.58);
+    ctx.quadraticCurveTo(-flameLength * 0.4, s.h * 0.6, -flameLength * 0.6, s.h * 0.55);
+    ctx.quadraticCurveTo(-flameLength * 0.3, s.h * 0.57, -1, s.h * 0.63);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.globalAlpha = 1;
+  }
+  
+  function drawRocket(ctx, r) {
+    ctx.save();
+    ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
+    
+    // Add subtle wobble during flight
+    if (r.launched) {
+      const wobbleAmount = Math.sin(r.wobble) * 0.5;
+      ctx.rotate(wobbleAmount * 0.1);
+    }
+    
+    const halfW = r.w / 2;
+    const halfH = r.h / 2;
+    
+    // Rocket body gradient
+    const bodyGrd = ctx.createLinearGradient(-halfW, -halfH, halfW, halfH);
+    if (r.active) {
+      bodyGrd.addColorStop(0, '#92400E'); // Heritage primary
+      bodyGrd.addColorStop(0.5, '#B45309'); // Heritage secondary
+      bodyGrd.addColorStop(1, '#7C2D12'); // Heritage dark
+    } else {
+      bodyGrd.addColorStop(0, '#B45309'); // Inactive coloring
+      bodyGrd.addColorStop(1, '#92400E');
+    }
+    
+    // Main rocket body
+    ctx.fillStyle = bodyGrd;
+    ctx.fillRect(-halfW, -halfH, r.w, r.h);
+    
+    // Rocket fins
+    ctx.fillStyle = '#7C2D12';
+    ctx.beginPath();
+    // Left fin
+    ctx.moveTo(-halfW, halfH - 3);
+    ctx.lineTo(-halfW - 3, halfH + 2);
+    ctx.lineTo(-halfW, halfH);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Right fin
+    ctx.beginPath();
+    ctx.moveTo(halfW, halfH - 3);
+    ctx.lineTo(halfW + 3, halfH + 2);
+    ctx.lineTo(halfW, halfH);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Rocket nose cone
+    ctx.fillStyle = r.active ? '#D97706' : '#B45309';
+    ctx.beginPath();
+    ctx.moveTo(-halfW + 1, -halfH);
+    ctx.lineTo(halfW - 1, -halfH);
+    ctx.lineTo(0, -halfH - 4);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Rocket stripe details
+    ctx.fillStyle = '#FEF3C7';
+    ctx.fillRect(-halfW + 1, -halfH + 2, r.w - 2, 1);
+    ctx.fillRect(-halfW + 1, halfH - 3, r.w - 2, 1);
+    
+    // Exhaust flames for launched rockets
+    if (r.launched && r.active) {
+      drawRocketExhaust(ctx, r, halfW, halfH);
+    }
+    
+    // Warning light for active rockets
+    if (r.active) {
+      const lightFlash = 0.5 + 0.5 * Math.sin(r.exhaustTime * 2);
+      ctx.globalAlpha = lightFlash;
+      ctx.fillStyle = '#DC2626';
+      ctx.fillRect(-1, -halfH + 4, 2, 1);
       ctx.globalAlpha = 1;
     }
     
     ctx.restore();
+  }
+  
+  function drawRocketExhaust(ctx, r, halfW, halfH) {
+    // Animated exhaust flames
+    const exhaustFlicker = 0.6 + 0.4 * Math.sin(r.exhaustTime) * r.exhaustIntensity;
+    const exhaustLength = 8 + exhaustFlicker * 6;
+    
+    // Create exhaust gradient
+    const exhaustGrd = ctx.createLinearGradient(0, halfH, 0, halfH + exhaustLength);
+    exhaustGrd.addColorStop(0, 'rgba(245, 158, 11, 1)'); // Heritage orange
+    exhaustGrd.addColorStop(0.4, 'rgba(254, 243, 199, 0.9)'); // Heritage cream
+    exhaustGrd.addColorStop(0.8, 'rgba(217, 119, 6, 0.6)'); // Heritage amber
+    exhaustGrd.addColorStop(1, 'rgba(245, 158, 11, 0)'); // Transparent
+    
+    ctx.globalAlpha = exhaustFlicker;
+    ctx.fillStyle = exhaustGrd;
+    
+    // Main exhaust flame
+    ctx.beginPath();
+    ctx.moveTo(-halfW + 2, halfH);
+    ctx.quadraticCurveTo(-2, halfH + exhaustLength * 0.6, 0, halfH + exhaustLength);
+    ctx.quadraticCurveTo(2, halfH + exhaustLength * 0.6, halfW - 2, halfH);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Secondary exhaust flickers
+    ctx.globalAlpha = exhaustFlicker * 0.7;
+    ctx.fillStyle = '#FEF3C7';
+    
+    const sideFlameLength = exhaustLength * 0.4;
+    // Left side flame
+    ctx.beginPath();
+    ctx.moveTo(-halfW + 1, halfH);
+    ctx.quadraticCurveTo(-3, halfH + sideFlameLength * 0.7, -1, halfH + sideFlameLength);
+    ctx.quadraticCurveTo(-2, halfH + sideFlameLength * 0.5, -halfW + 2, halfH);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Right side flame
+    ctx.beginPath();
+    ctx.moveTo(halfW - 1, halfH);
+    ctx.quadraticCurveTo(3, halfH + sideFlameLength * 0.7, 1, halfH + sideFlameLength);
+    ctx.quadraticCurveTo(2, halfH + sideFlameLength * 0.5, halfW - 2, halfH);
+    ctx.closePath();
+    ctx.fill();
+    
+    ctx.globalAlpha = 1;
   }
 
   useEffect(() => {
